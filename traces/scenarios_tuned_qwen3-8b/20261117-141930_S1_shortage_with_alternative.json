@@ -1,0 +1,358 @@
+{
+  "request": "Order ORD-1001 hasn't shipped yet. Investigate why and what we should do.",
+  "meta": {
+    "provider": "openai",
+    "model": "qwen3:8b",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "S1_shortage_with_alternative",
+    "scenario_passed": true
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1626,
+        "output_tokens": 316
+      },
+      "tool_requests": [
+        {
+          "id": "call_cy7zudx8",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1001"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_cy7zudx8",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1001"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 4.92
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1001",
+          "customer_name": "Northwind Retail",
+          "fulfillment_warehouse_id": "WH-BOS",
+          "fulfillment_warehouse_name": "Boston Distribution Center",
+          "order_date": "2026-03-10",
+          "promised_delivery_date": "2026-03-19",
+          "fulfillment_status": "PENDING_FULFILLMENT",
+          "items": [
+            {
+              "sku": "SKU-202",
+              "product_name": "Industrial Shelf Bracket",
+              "quantity": 50
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": 3,
+          "is_past_promised_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2121,
+        "output_tokens": 217
+      },
+      "tool_requests": [
+        {
+          "id": "call_xipt5heq",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-202",
+            "warehouse_id": "WH-BOS"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_xipt5heq",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-202",
+        "warehouse_id": "WH-BOS"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 3.1
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-202",
+          "warehouse_id": "WH-BOS",
+          "on_hand": 12,
+          "reserved": 0,
+          "available": 12,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2403,
+        "output_tokens": 369
+      },
+      "tool_requests": [
+        {
+          "id": "call_4if2fdc8",
+          "name": "find_alternative_stock",
+          "arguments": {
+            "sku": "SKU-202",
+            "required_quantity": 50,
+            "exclude_warehouse_id": "WH-BOS"
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "tool_execution",
+      "tool_call_id": "call_4if2fdc8",
+      "name": "find_alternative_stock",
+      "arguments": {
+        "sku": "SKU-202",
+        "required_quantity": 50,
+        "exclude_warehouse_id": "WH-BOS"
+      },
+      "meta": {
+        "python_function": "scagent.tools.find_alternative_stock",
+        "executed": true,
+        "duration_ms": 5.23
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-202",
+          "required_quantity": 50,
+          "excluded_warehouse_id": "WH-BOS",
+          "warehouses_checked": [
+            {
+              "warehouse_id": "WH-CHI",
+              "warehouse_name": "Chicago Distribution Center",
+              "available": 80,
+              "can_cover_required_quantity": true
+            },
+            {
+              "warehouse_id": "WH-ATL",
+              "warehouse_name": "Atlanta Distribution Center",
+              "available": 30,
+              "can_cover_required_quantity": false
+            },
+            {
+              "warehouse_id": "WH-DAL",
+              "warehouse_name": "Dallas Distribution Center",
+              "available": 0,
+              "can_cover_required_quantity": false
+            }
+          ],
+          "warehouses_with_sufficient_stock": [
+            "WH-CHI"
+          ],
+          "total_available_in_checked_warehouses": 110
+        }
+      }
+    },
+    {
+      "step": 7,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2954,
+        "output_tokens": 442
+      },
+      "tool_requests": [
+        {
+          "id": "call_4bnzcrbp",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1001",
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "evidence": [
+              "get_order_details: ORD-1001 fulfillment_warehouse_id WH-BOS, available 12 (ordered 50)",
+              "check_inventory: SKU-202 at WH-BOS available 12",
+              "find_alternative_stock: WH-CHI can cover 50 units"
+            ],
+            "likely_cause": "Insufficient stock at assigned warehouse WH-BOS",
+            "cause_status": "confirmed",
+            "recommended_source_warehouse": "WH-CHI",
+            "missing_information": [],
+            "summary": "Order ORD-1001 is pending fulfillment due to insufficient inventory at WH-BOS. The warehouse has 12 units available, but the order requires 50. Alternative stock exists at WH-CHI (80 units).",
+            "recommendation": "Transfer 50 units from WH-CHI to WH-BOS to fulfill the order. Update the fulfillment warehouse to WH-CHI if transfer is not feasible.",
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 8,
+      "type": "report_rejected",
+      "problems": [
+        "missing field 'uncertainties'"
+      ]
+    },
+    {
+      "step": 9,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 3418,
+        "output_tokens": 823
+      },
+      "tool_requests": [
+        {
+          "id": "call_ui9ihlr5",
+          "name": "submit_report",
+          "arguments": {
+            "cause_status": "confirmed",
+            "evidence": [
+              "get_order_details: ORD-1001 fulfillment_warehouse_id WH-BOS, available 12 (ordered 50)",
+              "check_inventory: SKU-202 at WH-BOS available 12",
+              "find_alternative_stock: WH-CHI can cover 50 units"
+            ],
+            "investigation_complete": true,
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "recommended_source_warehouse": "WH-CHI",
+            "uncertainties": [],
+            "likely_cause": "Insufficient stock at assigned warehouse WH-BOS",
+            "missing_information": [],
+            "order_id": "ORD-1001",
+            "recommendation": "Transfer 50 units from WH-CHI to WH-BOS to fulfill the order. Update the fulfillment warehouse to WH-CHI if transfer is not feasible.",
+            "summary": "Order ORD-1001 is pending fulfillment due to insufficient inventory at WH-BOS. The warehouse has 12 units available, but the order requires 50. Alternative stock exists at WH-CHI (80 units)."
+          }
+        }
+      ]
+    },
+    {
+      "step": 10,
+      "type": "final_report",
+      "report": {
+        "cause_status": "confirmed",
+        "evidence": [
+          "get_order_details: ORD-1001 fulfillment_warehouse_id WH-BOS, available 12 (ordered 50)",
+          "check_inventory: SKU-202 at WH-BOS available 12",
+          "find_alternative_stock: WH-CHI can cover 50 units"
+        ],
+        "investigation_complete": true,
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "recommended_source_warehouse": "WH-CHI",
+        "uncertainties": [],
+        "likely_cause": "Insufficient stock at assigned warehouse WH-BOS",
+        "missing_information": [],
+        "order_id": "ORD-1001",
+        "recommendation": "Transfer 50 units from WH-CHI to WH-BOS to fulfill the order. Update the fulfillment warehouse to WH-CHI if transfer is not feasible.",
+        "summary": "Order ORD-1001 is pending fulfillment due to insufficient inventory at WH-BOS. The warehouse has 12 units available, but the order requires 50. Alternative stock exists at WH-CHI (80 units)."
+      }
+    }
+  ],
+  "final_report": {
+    "cause_status": "confirmed",
+    "evidence": [
+      "get_order_details: ORD-1001 fulfillment_warehouse_id WH-BOS, available 12 (ordered 50)",
+      "check_inventory: SKU-202 at WH-BOS available 12",
+      "find_alternative_stock: WH-CHI can cover 50 units"
+    ],
+    "investigation_complete": true,
+    "issue_type": "INSUFFICIENT_INVENTORY",
+    "recommended_source_warehouse": "WH-CHI",
+    "uncertainties": [],
+    "likely_cause": "Insufficient stock at assigned warehouse WH-BOS",
+    "missing_information": [],
+    "order_id": "ORD-1001",
+    "recommendation": "Transfer 50 units from WH-CHI to WH-BOS to fulfill the order. Update the fulfillment warehouse to WH-CHI if transfer is not feasible.",
+    "summary": "Order ORD-1001 is pending fulfillment due to insufficient inventory at WH-BOS. The warehouse has 12 units available, but the order requires 50. Alternative stock exists at WH-CHI (80 units)."
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1001"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed available < ordered for SKU-202@WH-BOS (12)"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "pass",
+        "detail": "WH-CHI has enough available stock to cover the shortfall (database confirmed)"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says INSUFFICIENT_INVENTORY, report says INSUFFICIENT_INVENTORY"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1001",
+      "fulfillment_status": "PENDING_FULFILLMENT",
+      "short_items": [
+        {
+          "sku": "SKU-202",
+          "required": 50,
+          "available": 12,
+          "shortfall": 38
+        }
+      ],
+      "viable_sources": {
+        "SKU-202": [
+          "WH-CHI"
+        ]
+      },
+      "issue_type": "INSUFFICIENT_INVENTORY"
+    },
+    "tool_errors_seen": "[]"
+  }
+}

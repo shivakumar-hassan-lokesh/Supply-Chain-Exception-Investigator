@@ -1,0 +1,412 @@
+{
+  "request": "Why hasn't ORD-1002 been fulfilled?",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "X1_shortage_no_single_source",
+    "scenario_passed": true,
+    "run": 1
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I will look up the order\u2019s details to see its status, promised delivery date, items, and fulfillment warehouse so I can determine why it hasn\u2019t been fulfilled.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2258,
+        "output_tokens": 196
+      },
+      "tool_requests": [
+        {
+          "id": "call_SVUhEDcguAjgG5zO5EHBGTdd",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1002"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_SVUhEDcguAjgG5zO5EHBGTdd",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1002"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 1.27
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1002",
+          "customer_name": "Bluebird Labs",
+          "fulfillment_warehouse_id": "WH-ATL",
+          "fulfillment_warehouse_name": "Atlanta Distribution Center",
+          "order_date": "2026-03-09",
+          "promised_delivery_date": "2026-03-18",
+          "ship_by_date": "2026-03-16",
+          "fulfillment_status": "PENDING_FULFILLMENT",
+          "items": [
+            {
+              "sku": "SKU-404",
+              "product_name": "Handheld Barcode Scanner",
+              "quantity": 30
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": 2,
+          "is_past_promised_date": false,
+          "is_past_ship_by_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I will check on-hand and available stock for SKU-404 at WH-ATL to see if a stock shortage is preventing fulfillment.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2506,
+        "output_tokens": 385
+      },
+      "tool_requests": [
+        {
+          "id": "call_0sXgvknDE7AV7aFielx3uFkL",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-404",
+            "warehouse_id": "WH-ATL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_0sXgvknDE7AV7aFielx3uFkL",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-404",
+        "warehouse_id": "WH-ATL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 1.72
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-404",
+          "warehouse_id": "WH-ATL",
+          "on_hand": 10,
+          "reserved": 2,
+          "available": 8,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "I will search other warehouses for SKU-404 to see if any single location can cover the 22-unit shortfall for a transfer.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2627,
+        "output_tokens": 523
+      },
+      "tool_requests": [
+        {
+          "id": "call_RkASuLoakYRilKc3VhUWY0VU",
+          "name": "find_alternative_stock",
+          "arguments": {
+            "sku": "SKU-404",
+            "required_quantity": 22,
+            "exclude_warehouse_id": "WH-ATL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "tool_execution",
+      "tool_call_id": "call_RkASuLoakYRilKc3VhUWY0VU",
+      "name": "find_alternative_stock",
+      "arguments": {
+        "sku": "SKU-404",
+        "required_quantity": 22,
+        "exclude_warehouse_id": "WH-ATL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.find_alternative_stock",
+        "executed": true,
+        "duration_ms": 0.58
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-404",
+          "required_quantity": 22,
+          "excluded_warehouse_id": "WH-ATL",
+          "warehouses_checked": [
+            {
+              "warehouse_id": "WH-BOS",
+              "warehouse_name": "Boston Distribution Center",
+              "available": 8,
+              "can_cover_required_quantity": false
+            },
+            {
+              "warehouse_id": "WH-CHI",
+              "warehouse_name": "Chicago Distribution Center",
+              "available": 6,
+              "can_cover_required_quantity": false
+            },
+            {
+              "warehouse_id": "WH-DAL",
+              "warehouse_name": "Dallas Distribution Center",
+              "available": 5,
+              "can_cover_required_quantity": false
+            }
+          ],
+          "warehouses_with_sufficient_stock": [],
+          "total_available_in_checked_warehouses": 19
+        }
+      }
+    },
+    {
+      "step": 7,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2865,
+        "output_tokens": 1509
+      },
+      "tool_requests": [
+        {
+          "id": "call_NRAfhJK1JsWX6uwcPpLjOi7N",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1002",
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "summary": "Order ORD-1002 has not been fulfilled because WH-ATL does not have enough available units of SKU-404 to ship the order, and no single alternate warehouse can cover the shortfall. The order is still before its promised delivery date but is blocked on stock today (the ship-by date).",
+            "evidence": [
+              "get_order_details: ORD-1002 fulfillment_status PENDING_FULFILLMENT, fulfillment_warehouse_id WH-ATL, items SKU-404 qty 30, ship_by_date 2026-03-16, promised_delivery_date 2026-03-18",
+              "check_inventory: SKU-404 at WH-ATL on_hand 10, reserved 2, available 8 (ordered 30)",
+              "find_alternative_stock: required_quantity 22; WH-BOS available 8 can_cover_required_quantity=false; WH-CHI available 6 false; WH-DAL available 5 false; warehouses_with_sufficient_stock=[]; total_available_in_checked_warehouses=19"
+            ],
+            "cause_category": "STOCK_SHORTAGE",
+            "likely_cause": "Insufficient available stock of SKU-404 at WH-ATL (8 available vs 30 ordered), with no single alternate warehouse able to cover the 22-unit shortfall.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "ETA for replenishment of SKU-404 to WH-ATL is not known from available data.",
+              "Whether the customer accepts split shipments is not stated."
+            ],
+            "recommended_actions": [
+              {
+                "action": "EXPEDITE_REPLENISHMENT",
+                "details": "Rush a replenishment or purchase order for SKU-404 to WH-ATL for at least 22 units (to cover the shortfall), citing check_inventory: available 8 vs ordered 30 and get_order_details: ship_by_date 2026-03-16, promised_delivery_date 2026-03-18."
+              },
+              {
+                "action": "SHIP_PARTIAL",
+                "details": "Release a partial shipment now for 8 units of SKU-404 from WH-ATL (the available quantity) so the customer receives some product while awaiting the remainder; justified by check_inventory: available 8 at WH-ATL and get_order_details: promised_delivery_date in 2 days."
+              },
+              {
+                "action": "NOTIFY_CUSTOMER",
+                "details": "Inform Bluebird Labs that only 8 of 30 units can ship now due to stock shortage at WH-ATL and provide an expected date for the remaining 22 units once replenishment is scheduled; reference check_inventory shortage and find_alternative_stock showing no single warehouse can cover the shortfall."
+              }
+            ],
+            "recommendation": "Expedite replenishment of 22+ units of SKU-404 to WH-ATL and ship the 8 available units now, while notifying the customer about the partial and the expected date for the balance.",
+            "recommended_source_warehouse": null,
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 8,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1002",
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "summary": "Order ORD-1002 has not been fulfilled because WH-ATL does not have enough available units of SKU-404 to ship the order, and no single alternate warehouse can cover the shortfall. The order is still before its promised delivery date but is blocked on stock today (the ship-by date).",
+        "evidence": [
+          "get_order_details: ORD-1002 fulfillment_status PENDING_FULFILLMENT, fulfillment_warehouse_id WH-ATL, items SKU-404 qty 30, ship_by_date 2026-03-16, promised_delivery_date 2026-03-18",
+          "check_inventory: SKU-404 at WH-ATL on_hand 10, reserved 2, available 8 (ordered 30)",
+          "find_alternative_stock: required_quantity 22; WH-BOS available 8 can_cover_required_quantity=false; WH-CHI available 6 false; WH-DAL available 5 false; warehouses_with_sufficient_stock=[]; total_available_in_checked_warehouses=19"
+        ],
+        "cause_category": "STOCK_SHORTAGE",
+        "likely_cause": "Insufficient available stock of SKU-404 at WH-ATL (8 available vs 30 ordered), with no single alternate warehouse able to cover the 22-unit shortfall.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "ETA for replenishment of SKU-404 to WH-ATL is not known from available data.",
+          "Whether the customer accepts split shipments is not stated."
+        ],
+        "recommended_actions": [
+          {
+            "action": "EXPEDITE_REPLENISHMENT",
+            "details": "Rush a replenishment or purchase order for SKU-404 to WH-ATL for at least 22 units (to cover the shortfall), citing check_inventory: available 8 vs ordered 30 and get_order_details: ship_by_date 2026-03-16, promised_delivery_date 2026-03-18."
+          },
+          {
+            "action": "SHIP_PARTIAL",
+            "details": "Release a partial shipment now for 8 units of SKU-404 from WH-ATL (the available quantity) so the customer receives some product while awaiting the remainder; justified by check_inventory: available 8 at WH-ATL and get_order_details: promised_delivery_date in 2 days."
+          },
+          {
+            "action": "NOTIFY_CUSTOMER",
+            "details": "Inform Bluebird Labs that only 8 of 30 units can ship now due to stock shortage at WH-ATL and provide an expected date for the remaining 22 units once replenishment is scheduled; reference check_inventory shortage and find_alternative_stock showing no single warehouse can cover the shortfall."
+          }
+        ],
+        "recommendation": "Expedite replenishment of 22+ units of SKU-404 to WH-ATL and ship the 8 available units now, while notifying the customer about the partial and the expected date for the balance.",
+        "recommended_source_warehouse": null,
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1002",
+    "issue_type": "INSUFFICIENT_INVENTORY",
+    "summary": "Order ORD-1002 has not been fulfilled because WH-ATL does not have enough available units of SKU-404 to ship the order, and no single alternate warehouse can cover the shortfall. The order is still before its promised delivery date but is blocked on stock today (the ship-by date).",
+    "evidence": [
+      "get_order_details: ORD-1002 fulfillment_status PENDING_FULFILLMENT, fulfillment_warehouse_id WH-ATL, items SKU-404 qty 30, ship_by_date 2026-03-16, promised_delivery_date 2026-03-18",
+      "check_inventory: SKU-404 at WH-ATL on_hand 10, reserved 2, available 8 (ordered 30)",
+      "find_alternative_stock: required_quantity 22; WH-BOS available 8 can_cover_required_quantity=false; WH-CHI available 6 false; WH-DAL available 5 false; warehouses_with_sufficient_stock=[]; total_available_in_checked_warehouses=19"
+    ],
+    "cause_category": "STOCK_SHORTAGE",
+    "likely_cause": "Insufficient available stock of SKU-404 at WH-ATL (8 available vs 30 ordered), with no single alternate warehouse able to cover the 22-unit shortfall.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "ETA for replenishment of SKU-404 to WH-ATL is not known from available data.",
+      "Whether the customer accepts split shipments is not stated."
+    ],
+    "recommended_actions": [
+      {
+        "action": "EXPEDITE_REPLENISHMENT",
+        "details": "Rush a replenishment or purchase order for SKU-404 to WH-ATL for at least 22 units (to cover the shortfall), citing check_inventory: available 8 vs ordered 30 and get_order_details: ship_by_date 2026-03-16, promised_delivery_date 2026-03-18."
+      },
+      {
+        "action": "SHIP_PARTIAL",
+        "details": "Release a partial shipment now for 8 units of SKU-404 from WH-ATL (the available quantity) so the customer receives some product while awaiting the remainder; justified by check_inventory: available 8 at WH-ATL and get_order_details: promised_delivery_date in 2 days."
+      },
+      {
+        "action": "NOTIFY_CUSTOMER",
+        "details": "Inform Bluebird Labs that only 8 of 30 units can ship now due to stock shortage at WH-ATL and provide an expected date for the remaining 22 units once replenishment is scheduled; reference check_inventory shortage and find_alternative_stock showing no single warehouse can cover the shortfall."
+      }
+    ],
+    "recommendation": "Expedite replenishment of 22+ units of SKU-404 to WH-ATL and ship the 8 available units now, while notifying the customer about the partial and the expected date for the balance.",
+    "recommended_source_warehouse": null,
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1002"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all factual dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed available < ordered for SKU-404@WH-ATL (8)"
+      },
+      {
+        "name": "cause_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed a shortage"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "actions_supported_by_evidence",
+        "status": "pass",
+        "detail": "3 action(s), each with the evidence it needs"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says INSUFFICIENT_INVENTORY, report says INSUFFICIENT_INVENTORY"
+      },
+      {
+        "name": "cause_matches_database",
+        "status": "pass",
+        "detail": "database says STOCK_SHORTAGE, report says STOCK_SHORTAGE"
+      },
+      {
+        "name": "actions_appropriate",
+        "status": "pass",
+        "detail": "required met 1/1"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1002",
+      "fulfillment_status": "PENDING_FULFILLMENT",
+      "past_promise": false,
+      "short_items": [
+        {
+          "sku": "SKU-404",
+          "required": 30,
+          "available": 8,
+          "shortfall": 22
+        }
+      ],
+      "viable_sources": {
+        "SKU-404": []
+      },
+      "issue_type": "INSUFFICIENT_INVENTORY",
+      "cause_category": "STOCK_SHORTAGE",
+      "acceptable_issue_types": [
+        "INSUFFICIENT_INVENTORY"
+      ],
+      "acceptable_causes": [
+        "STOCK_SHORTAGE"
+      ],
+      "expected_actions": {
+        "required_any_of": [
+          [
+            "EXPEDITE_REPLENISHMENT"
+          ]
+        ],
+        "allowed": [
+          "EXPEDITE_REPLENISHMENT",
+          "NOTIFY_CUSTOMER",
+          "SHIP_PARTIAL"
+        ]
+      }
+    },
+    "tool_errors_seen": "[]"
+  }
+}

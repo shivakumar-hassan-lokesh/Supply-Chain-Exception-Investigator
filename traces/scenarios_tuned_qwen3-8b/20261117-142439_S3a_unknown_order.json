@@ -1,0 +1,206 @@
+{
+  "request": "Investigate order ORD-9999. The customer says it never arrived.",
+  "meta": {
+    "provider": "openai",
+    "model": "qwen3:8b",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "S3a_unknown_order",
+    "scenario_passed": true
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1622,
+        "output_tokens": 231
+      },
+      "tool_requests": [
+        {
+          "id": "call_7tatq4qr",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-9999"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_7tatq4qr",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-9999"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 5.94
+      },
+      "result": {
+        "ok": false,
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "No order with order_id 'ORD-9999' exists."
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1898,
+        "output_tokens": 356
+      },
+      "tool_requests": [
+        {
+          "id": "call_m99nvnbv",
+          "name": "submit_report",
+          "arguments": {
+            "cause_status": "not_applicable",
+            "issue_type": "ORDER_NOT_FOUND",
+            "summary": "The order does not exist in the system.",
+            "recommendation": "Verify the order number with the customer. Check for typos or data entry errors.",
+            "missing_information": [
+              "Order details not found"
+            ],
+            "investigation_complete": true,
+            "order_id": "ORD-9999",
+            "evidence": [],
+            "likely_cause": "Unknown (order not found)"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "report_rejected",
+      "problems": [
+        "missing field 'uncertainties'",
+        "missing field 'recommended_source_warehouse'"
+      ]
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2304,
+        "output_tokens": 393
+      },
+      "tool_requests": [
+        {
+          "id": "call_dz3vx0ci",
+          "name": "submit_report",
+          "arguments": {
+            "recommended_source_warehouse": null,
+            "investigation_complete": true,
+            "issue_type": "ORDER_NOT_FOUND",
+            "likely_cause": "Unknown (order not found)",
+            "missing_information": [
+              "Order details not found"
+            ],
+            "order_id": "ORD-9999",
+            "recommendation": "Verify the order number with the customer. Check for typos or data entry errors.",
+            "uncertainties": [],
+            "cause_status": "not_applicable",
+            "evidence": [],
+            "summary": "The order does not exist in the system."
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "final_report",
+      "report": {
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "issue_type": "ORDER_NOT_FOUND",
+        "likely_cause": "Unknown (order not found)",
+        "missing_information": [
+          "Order details not found"
+        ],
+        "order_id": "ORD-9999",
+        "recommendation": "Verify the order number with the customer. Check for typos or data entry errors.",
+        "uncertainties": [],
+        "cause_status": "not_applicable",
+        "evidence": [],
+        "summary": "The order does not exist in the system."
+      }
+    }
+  ],
+  "final_report": {
+    "recommended_source_warehouse": null,
+    "investigation_complete": true,
+    "issue_type": "ORDER_NOT_FOUND",
+    "likely_cause": "Unknown (order not found)",
+    "missing_information": [
+      "Order details not found"
+    ],
+    "order_id": "ORD-9999",
+    "recommendation": "Verify the order number with the customer. Check for typos or data entry errors.",
+    "uncertainties": [],
+    "cause_status": "not_applicable",
+    "evidence": [],
+    "summary": "The order does not exist in the system."
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details was called for ORD-9999 and returned an error"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "get_order_details returned NOT_FOUND"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says ORDER_NOT_FOUND, report says ORDER_NOT_FOUND"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-9999",
+      "issue_type": "ORDER_NOT_FOUND"
+    },
+    "tool_errors_seen": "[{\"code\": \"NOT_FOUND\", \"message\": \"No order with order_id 'ORD-9999' exists.\"}]"
+  }
+}

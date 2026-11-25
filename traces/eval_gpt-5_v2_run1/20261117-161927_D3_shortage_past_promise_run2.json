@@ -1,0 +1,423 @@
+{
+  "request": "Order ORD-1012 still hasn't shipped and the customer is asking. What went wrong and what should we do?",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "D3_shortage_past_promise",
+    "scenario_passed": true,
+    "run": 2
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I will check the order details to confirm its status, promised delivery date, items, and fulfillment warehouse to determine why it hasn't shipped.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2272,
+        "output_tokens": 1150
+      },
+      "tool_requests": [
+        {
+          "id": "call_imO53KZ0kt4k5iwJ6Uc5w8XN",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1012"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_imO53KZ0kt4k5iwJ6Uc5w8XN",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1012"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 4.88
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1012",
+          "customer_name": "Tailwind Traders",
+          "fulfillment_warehouse_id": "WH-CHI",
+          "fulfillment_warehouse_name": "Chicago Distribution Center",
+          "order_date": "2026-03-08",
+          "promised_delivery_date": "2026-03-15",
+          "ship_by_date": "2026-03-12",
+          "fulfillment_status": "PENDING_FULFILLMENT",
+          "items": [
+            {
+              "sku": "SKU-101",
+              "product_name": "Pallet Jack Wheel Kit",
+              "quantity": 30
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": -1,
+          "is_past_promised_date": true,
+          "is_past_ship_by_date": true
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I will check inventory for SKU-101 at WH-CHI to see if a stock shortage is preventing shipment.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2515,
+        "output_tokens": 189
+      },
+      "tool_requests": [
+        {
+          "id": "call_ucCKrDQklTnnng6m4qrWrf4S",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-101",
+            "warehouse_id": "WH-CHI"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_ucCKrDQklTnnng6m4qrWrf4S",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-101",
+        "warehouse_id": "WH-CHI"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 1.5
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-101",
+          "warehouse_id": "WH-CHI",
+          "on_hand": 20,
+          "reserved": 0,
+          "available": 20,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "I will look for alternative stock for SKU-101 to cover the shortfall of 10 units from other warehouses so we can fulfill the order.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2632,
+        "output_tokens": 717
+      },
+      "tool_requests": [
+        {
+          "id": "call_GSvgJwlPjP5RTxcochjwwer6",
+          "name": "find_alternative_stock",
+          "arguments": {
+            "sku": "SKU-101",
+            "required_quantity": 10,
+            "exclude_warehouse_id": "WH-CHI"
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "tool_execution",
+      "tool_call_id": "call_GSvgJwlPjP5RTxcochjwwer6",
+      "name": "find_alternative_stock",
+      "arguments": {
+        "sku": "SKU-101",
+        "required_quantity": 10,
+        "exclude_warehouse_id": "WH-CHI"
+      },
+      "meta": {
+        "python_function": "scagent.tools.find_alternative_stock",
+        "executed": true,
+        "duration_ms": 3.02
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-101",
+          "required_quantity": 10,
+          "excluded_warehouse_id": "WH-CHI",
+          "warehouses_checked": [
+            {
+              "warehouse_id": "WH-BOS",
+              "warehouse_name": "Boston Distribution Center",
+              "available": 35,
+              "can_cover_required_quantity": true
+            },
+            {
+              "warehouse_id": "WH-DAL",
+              "warehouse_name": "Dallas Distribution Center",
+              "available": 15,
+              "can_cover_required_quantity": true
+            },
+            {
+              "warehouse_id": "WH-ATL",
+              "warehouse_name": "Atlanta Distribution Center",
+              "available": 0,
+              "can_cover_required_quantity": false
+            }
+          ],
+          "warehouses_with_sufficient_stock": [
+            "WH-BOS",
+            "WH-DAL"
+          ],
+          "total_available_in_checked_warehouses": 50
+        }
+      }
+    },
+    {
+      "step": 7,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2881,
+        "output_tokens": 2383
+      },
+      "tool_requests": [
+        {
+          "id": "call_LmsOpQ3rI0WH03zHflZ0sXCG",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1012",
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "summary": "The order missed its promised date and has not shipped because WH-CHI does not have enough stock of SKU-101 to fulfill the 30-unit order. There is a 10-unit shortfall at the fulfillment warehouse.",
+            "evidence": [
+              "get_order_details: ORD-1012 for Tailwind Traders at WH-CHI, fulfillment_status PENDING_FULFILLMENT, promised_delivery_date 2026-03-15, ship_by_date 2026-03-12, items SKU-101 qty 30, is_past_promised_date true (days_until_promised_date -1).",
+              "check_inventory: SKU-101 at WH-CHI on_hand 20, reserved 0, available 20 (ordered 30) \u2014 shortfall 10.",
+              "find_alternative_stock: For SKU-101 required_quantity 10, WH-BOS available 35 can_cover_required_quantity true; WH-DAL available 15 can_cover_required_quantity true; WH-ATL available 0 cannot cover."
+            ],
+            "cause_category": "STOCK_SHORTAGE",
+            "likely_cause": "Insufficient available inventory at WH-CHI (20 available vs 30 ordered) prevented shipment by the ship-by date.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "Transfer lead time from the source warehouse to WH-CHI is not known from available data.",
+              "Customer preference on partial shipment versus waiting for a consolidated shipment is unknown."
+            ],
+            "recommended_actions": [
+              {
+                "action": "TRANSFER_STOCK",
+                "details": "Initiate an inter-warehouse transfer of 10 units of SKU-101 from WH-BOS to WH-CHI to cover the shortfall; justified by check_inventory: WH-CHI available 20 vs ordered 30 (shortfall 10) and find_alternative_stock: WH-BOS available 35 and can_cover_required_quantity true."
+              },
+              {
+                "action": "SHIP_PARTIAL",
+                "details": "Release and ship 20 units of SKU-101 from WH-CHI now, and ship the remaining 10 units upon receipt of the transfer; justified by check_inventory: available 20 at WH-CHI vs ordered 30."
+              },
+              {
+                "action": "NOTIFY_CUSTOMER",
+                "details": "Inform Tailwind Traders that the order is delayed due to a 10-unit stock shortfall at WH-CHI (check_inventory), outline the plan to ship 20 now with 10 to follow after a transfer from WH-BOS (find_alternative_stock), and provide an updated ETA once transfer timing is confirmed."
+              }
+            ],
+            "recommendation": "Transfer 10 units of SKU-101 from WH-BOS to WH-CHI and ship the 20 available units now; notify the customer about the delay and the two-step fulfillment plan.",
+            "recommended_source_warehouse": "WH-BOS",
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 8,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1012",
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "summary": "The order missed its promised date and has not shipped because WH-CHI does not have enough stock of SKU-101 to fulfill the 30-unit order. There is a 10-unit shortfall at the fulfillment warehouse.",
+        "evidence": [
+          "get_order_details: ORD-1012 for Tailwind Traders at WH-CHI, fulfillment_status PENDING_FULFILLMENT, promised_delivery_date 2026-03-15, ship_by_date 2026-03-12, items SKU-101 qty 30, is_past_promised_date true (days_until_promised_date -1).",
+          "check_inventory: SKU-101 at WH-CHI on_hand 20, reserved 0, available 20 (ordered 30) \u2014 shortfall 10.",
+          "find_alternative_stock: For SKU-101 required_quantity 10, WH-BOS available 35 can_cover_required_quantity true; WH-DAL available 15 can_cover_required_quantity true; WH-ATL available 0 cannot cover."
+        ],
+        "cause_category": "STOCK_SHORTAGE",
+        "likely_cause": "Insufficient available inventory at WH-CHI (20 available vs 30 ordered) prevented shipment by the ship-by date.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "Transfer lead time from the source warehouse to WH-CHI is not known from available data.",
+          "Customer preference on partial shipment versus waiting for a consolidated shipment is unknown."
+        ],
+        "recommended_actions": [
+          {
+            "action": "TRANSFER_STOCK",
+            "details": "Initiate an inter-warehouse transfer of 10 units of SKU-101 from WH-BOS to WH-CHI to cover the shortfall; justified by check_inventory: WH-CHI available 20 vs ordered 30 (shortfall 10) and find_alternative_stock: WH-BOS available 35 and can_cover_required_quantity true."
+          },
+          {
+            "action": "SHIP_PARTIAL",
+            "details": "Release and ship 20 units of SKU-101 from WH-CHI now, and ship the remaining 10 units upon receipt of the transfer; justified by check_inventory: available 20 at WH-CHI vs ordered 30."
+          },
+          {
+            "action": "NOTIFY_CUSTOMER",
+            "details": "Inform Tailwind Traders that the order is delayed due to a 10-unit stock shortfall at WH-CHI (check_inventory), outline the plan to ship 20 now with 10 to follow after a transfer from WH-BOS (find_alternative_stock), and provide an updated ETA once transfer timing is confirmed."
+          }
+        ],
+        "recommendation": "Transfer 10 units of SKU-101 from WH-BOS to WH-CHI and ship the 20 available units now; notify the customer about the delay and the two-step fulfillment plan.",
+        "recommended_source_warehouse": "WH-BOS",
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1012",
+    "issue_type": "INSUFFICIENT_INVENTORY",
+    "summary": "The order missed its promised date and has not shipped because WH-CHI does not have enough stock of SKU-101 to fulfill the 30-unit order. There is a 10-unit shortfall at the fulfillment warehouse.",
+    "evidence": [
+      "get_order_details: ORD-1012 for Tailwind Traders at WH-CHI, fulfillment_status PENDING_FULFILLMENT, promised_delivery_date 2026-03-15, ship_by_date 2026-03-12, items SKU-101 qty 30, is_past_promised_date true (days_until_promised_date -1).",
+      "check_inventory: SKU-101 at WH-CHI on_hand 20, reserved 0, available 20 (ordered 30) \u2014 shortfall 10.",
+      "find_alternative_stock: For SKU-101 required_quantity 10, WH-BOS available 35 can_cover_required_quantity true; WH-DAL available 15 can_cover_required_quantity true; WH-ATL available 0 cannot cover."
+    ],
+    "cause_category": "STOCK_SHORTAGE",
+    "likely_cause": "Insufficient available inventory at WH-CHI (20 available vs 30 ordered) prevented shipment by the ship-by date.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "Transfer lead time from the source warehouse to WH-CHI is not known from available data.",
+      "Customer preference on partial shipment versus waiting for a consolidated shipment is unknown."
+    ],
+    "recommended_actions": [
+      {
+        "action": "TRANSFER_STOCK",
+        "details": "Initiate an inter-warehouse transfer of 10 units of SKU-101 from WH-BOS to WH-CHI to cover the shortfall; justified by check_inventory: WH-CHI available 20 vs ordered 30 (shortfall 10) and find_alternative_stock: WH-BOS available 35 and can_cover_required_quantity true."
+      },
+      {
+        "action": "SHIP_PARTIAL",
+        "details": "Release and ship 20 units of SKU-101 from WH-CHI now, and ship the remaining 10 units upon receipt of the transfer; justified by check_inventory: available 20 at WH-CHI vs ordered 30."
+      },
+      {
+        "action": "NOTIFY_CUSTOMER",
+        "details": "Inform Tailwind Traders that the order is delayed due to a 10-unit stock shortfall at WH-CHI (check_inventory), outline the plan to ship 20 now with 10 to follow after a transfer from WH-BOS (find_alternative_stock), and provide an updated ETA once transfer timing is confirmed."
+      }
+    ],
+    "recommendation": "Transfer 10 units of SKU-101 from WH-BOS to WH-CHI and ship the 20 available units now; notify the customer about the delay and the two-step fulfillment plan.",
+    "recommended_source_warehouse": "WH-BOS",
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1012"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all factual dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed available < ordered for SKU-101@WH-CHI (20)"
+      },
+      {
+        "name": "cause_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed a shortage"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "pass",
+        "detail": "WH-BOS has enough available stock to cover the shortfall (database confirmed)"
+      },
+      {
+        "name": "actions_supported_by_evidence",
+        "status": "pass",
+        "detail": "3 action(s), each with the evidence it needs"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says INSUFFICIENT_INVENTORY/DELAYED_DELIVERY, report says INSUFFICIENT_INVENTORY"
+      },
+      {
+        "name": "cause_matches_database",
+        "status": "pass",
+        "detail": "database says STOCK_SHORTAGE, report says STOCK_SHORTAGE"
+      },
+      {
+        "name": "actions_appropriate",
+        "status": "pass",
+        "detail": "required met 2/2"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1012",
+      "fulfillment_status": "PENDING_FULFILLMENT",
+      "past_promise": true,
+      "short_items": [
+        {
+          "sku": "SKU-101",
+          "required": 30,
+          "available": 20,
+          "shortfall": 10
+        }
+      ],
+      "viable_sources": {
+        "SKU-101": [
+          "WH-BOS",
+          "WH-DAL"
+        ]
+      },
+      "issue_type": "INSUFFICIENT_INVENTORY",
+      "cause_category": "STOCK_SHORTAGE",
+      "acceptable_issue_types": [
+        "INSUFFICIENT_INVENTORY",
+        "DELAYED_DELIVERY"
+      ],
+      "acceptable_causes": [
+        "STOCK_SHORTAGE"
+      ],
+      "expected_actions": {
+        "required_any_of": [
+          [
+            "TRANSFER_STOCK"
+          ],
+          [
+            "NOTIFY_CUSTOMER"
+          ]
+        ],
+        "allowed": [
+          "EXPEDITE_REPLENISHMENT",
+          "NOTIFY_CUSTOMER",
+          "SHIP_PARTIAL",
+          "TRANSFER_STOCK"
+        ]
+      }
+    },
+    "tool_errors_seen": "[]"
+  }
+}

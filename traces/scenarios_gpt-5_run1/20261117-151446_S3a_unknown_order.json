@@ -1,0 +1,196 @@
+{
+  "request": "Investigate order ORD-9999. The customer says it never arrived.",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "S3a_unknown_order",
+    "scenario_passed": true
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I\u2019m checking the order\u2019s details to see its fulfillment status, items, warehouse, and promised delivery date.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1435,
+        "output_tokens": 441
+      },
+      "tool_requests": [
+        {
+          "id": "call_KNi3PyO5Sx0pmdwdhKzWYno4",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-9999"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_KNi3PyO5Sx0pmdwdhKzWYno4",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-9999"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 2.09
+      },
+      "result": {
+        "ok": false,
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "No order with order_id 'ORD-9999' exists."
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1531,
+        "output_tokens": 937
+      },
+      "tool_requests": [
+        {
+          "id": "call_1DC1Rukto9f56pj0mSdbHSHB",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-9999",
+            "issue_type": "ORDER_NOT_FOUND",
+            "summary": "No order with ID ORD-9999 was found in our system, so I cannot verify shipment or delivery status. Further details are required to locate the correct record.",
+            "evidence": [
+              "get_order_details: No order with order_id 'ORD-9999' exists (NOT_FOUND)."
+            ],
+            "likely_cause": "unknown",
+            "cause_status": "unknown",
+            "uncertainties": [
+              "The customer may have provided an incorrect order ID.",
+              "The order could exist under a different ID or sales channel not visible here.",
+              "The order might not have been successfully placed."
+            ],
+            "recommendation": "Ask the customer to confirm the order number and share the order confirmation email, order date, customer name/email, or any tracking number so we can locate the correct record and continue the investigation.",
+            "recommended_source_warehouse": null,
+            "missing_information": [
+              "Valid order ID for this purchase",
+              "Customer identifiers (name/email/phone)",
+              "Order date or order confirmation number",
+              "Any tracking number associated with the shipment"
+            ],
+            "investigation_complete": false
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-9999",
+        "issue_type": "ORDER_NOT_FOUND",
+        "summary": "No order with ID ORD-9999 was found in our system, so I cannot verify shipment or delivery status. Further details are required to locate the correct record.",
+        "evidence": [
+          "get_order_details: No order with order_id 'ORD-9999' exists (NOT_FOUND)."
+        ],
+        "likely_cause": "unknown",
+        "cause_status": "unknown",
+        "uncertainties": [
+          "The customer may have provided an incorrect order ID.",
+          "The order could exist under a different ID or sales channel not visible here.",
+          "The order might not have been successfully placed."
+        ],
+        "recommendation": "Ask the customer to confirm the order number and share the order confirmation email, order date, customer name/email, or any tracking number so we can locate the correct record and continue the investigation.",
+        "recommended_source_warehouse": null,
+        "missing_information": [
+          "Valid order ID for this purchase",
+          "Customer identifiers (name/email/phone)",
+          "Order date or order confirmation number",
+          "Any tracking number associated with the shipment"
+        ],
+        "investigation_complete": false
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-9999",
+    "issue_type": "ORDER_NOT_FOUND",
+    "summary": "No order with ID ORD-9999 was found in our system, so I cannot verify shipment or delivery status. Further details are required to locate the correct record.",
+    "evidence": [
+      "get_order_details: No order with order_id 'ORD-9999' exists (NOT_FOUND)."
+    ],
+    "likely_cause": "unknown",
+    "cause_status": "unknown",
+    "uncertainties": [
+      "The customer may have provided an incorrect order ID.",
+      "The order could exist under a different ID or sales channel not visible here.",
+      "The order might not have been successfully placed."
+    ],
+    "recommendation": "Ask the customer to confirm the order number and share the order confirmation email, order date, customer name/email, or any tracking number so we can locate the correct record and continue the investigation.",
+    "recommended_source_warehouse": null,
+    "missing_information": [
+      "Valid order ID for this purchase",
+      "Customer identifiers (name/email/phone)",
+      "Order date or order confirmation number",
+      "Any tracking number associated with the shipment"
+    ],
+    "investigation_complete": false
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details was called for ORD-9999 and returned an error"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "get_order_details returned NOT_FOUND"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "skip",
+        "detail": "report is marked incomplete; database says ORDER_NOT_FOUND, report says ORDER_NOT_FOUND"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-9999",
+      "issue_type": "ORDER_NOT_FOUND"
+    },
+    "tool_errors_seen": "[{\"code\": \"NOT_FOUND\", \"message\": \"No order with order_id 'ORD-9999' exists.\"}]"
+  }
+}

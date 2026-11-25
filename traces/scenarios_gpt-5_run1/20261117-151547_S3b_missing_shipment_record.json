@@ -1,0 +1,263 @@
+{
+  "request": "Where is order ORD-1007? It should have arrived by now.",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "S3b_missing_shipment_record",
+    "scenario_passed": true
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I\u2019m checking the order\u2019s details to see its fulfillment status and promised delivery date.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1435,
+        "output_tokens": 692
+      },
+      "tool_requests": [
+        {
+          "id": "call_COYekMelGTfQurbJOmNmwxFj",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1007"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_COYekMelGTfQurbJOmNmwxFj",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1007"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 2.14
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1007",
+          "customer_name": "Litware Inc",
+          "fulfillment_warehouse_id": "WH-ATL",
+          "fulfillment_warehouse_name": "Atlanta Distribution Center",
+          "order_date": "2026-03-08",
+          "promised_delivery_date": "2026-03-13",
+          "fulfillment_status": "SHIPPED",
+          "items": [
+            {
+              "sku": "SKU-101",
+              "product_name": "Pallet Jack Wheel Kit",
+              "quantity": 12
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": -3,
+          "is_past_promised_date": true
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I\u2019m checking the shipment tracking to see its current status, events, and whether it\u2019s overdue versus the promised date.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1641,
+        "output_tokens": 188
+      },
+      "tool_requests": [
+        {
+          "id": "call_9wBlrDessSlb9FNNNjtq1gvF",
+          "name": "get_shipment_status",
+          "arguments": {
+            "order_id": "ORD-1007"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_9wBlrDessSlb9FNNNjtq1gvF",
+      "name": "get_shipment_status",
+      "arguments": {
+        "order_id": "ORD-1007"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_shipment_status",
+        "executed": true,
+        "duration_ms": 1.59
+      },
+      "result": {
+        "ok": false,
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record."
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1751,
+        "output_tokens": 2413
+      },
+      "tool_requests": [
+        {
+          "id": "call_4I7knneBag6oVL8OCX5fitC5",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1007",
+            "issue_type": "DELAYED_DELIVERY",
+            "summary": "ORD-1007 is past its promised delivery date and marked SHIPPED, but there is no shipment record to locate or track it, so its current whereabouts and ETA are unknown.",
+            "evidence": [
+              "get_order_details: ORD-1007 for Litware Inc, fulfillment_status SHIPPED from WH-ATL (Atlanta Distribution Center), promised_delivery_date 2026-03-13, investigation_date 2026-03-16, is_past_promised_date true, items include SKU-101 quantity 12.",
+              "get_shipment_status: NOT_FOUND for order ORD-1007 with message \"Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record.\""
+            ],
+            "likely_cause": "unknown (no shipment/tracking record available)",
+            "cause_status": "unknown",
+            "uncertainties": [
+              "Carrier, tracking number, dispatch date, current location, and current ETA are unknown due to missing shipment record.",
+              "Whether the delay is due to carrier transit issues or an internal data/scan error is unknown."
+            ],
+            "recommendation": "Ask the WH-ATL shipping team to retrieve and attach the carrier and tracking number for ORD-1007 and confirm the dispatch date, then trace with the carrier for status and an updated ETA; if no physical shipment exists, correct the order status and ship immediately (consider expediting).",
+            "recommended_source_warehouse": null,
+            "missing_information": [
+              "Shipment record for ORD-1007",
+              "Carrier name",
+              "Tracking number",
+              "Dispatch/hand-off date",
+              "Current estimated delivery date",
+              "Most recent tracking scan/location",
+              "Recorded delay reason, if any"
+            ],
+            "investigation_complete": false
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1007",
+        "issue_type": "DELAYED_DELIVERY",
+        "summary": "ORD-1007 is past its promised delivery date and marked SHIPPED, but there is no shipment record to locate or track it, so its current whereabouts and ETA are unknown.",
+        "evidence": [
+          "get_order_details: ORD-1007 for Litware Inc, fulfillment_status SHIPPED from WH-ATL (Atlanta Distribution Center), promised_delivery_date 2026-03-13, investigation_date 2026-03-16, is_past_promised_date true, items include SKU-101 quantity 12.",
+          "get_shipment_status: NOT_FOUND for order ORD-1007 with message \"Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record.\""
+        ],
+        "likely_cause": "unknown (no shipment/tracking record available)",
+        "cause_status": "unknown",
+        "uncertainties": [
+          "Carrier, tracking number, dispatch date, current location, and current ETA are unknown due to missing shipment record.",
+          "Whether the delay is due to carrier transit issues or an internal data/scan error is unknown."
+        ],
+        "recommendation": "Ask the WH-ATL shipping team to retrieve and attach the carrier and tracking number for ORD-1007 and confirm the dispatch date, then trace with the carrier for status and an updated ETA; if no physical shipment exists, correct the order status and ship immediately (consider expediting).",
+        "recommended_source_warehouse": null,
+        "missing_information": [
+          "Shipment record for ORD-1007",
+          "Carrier name",
+          "Tracking number",
+          "Dispatch/hand-off date",
+          "Current estimated delivery date",
+          "Most recent tracking scan/location",
+          "Recorded delay reason, if any"
+        ],
+        "investigation_complete": false
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1007",
+    "issue_type": "DELAYED_DELIVERY",
+    "summary": "ORD-1007 is past its promised delivery date and marked SHIPPED, but there is no shipment record to locate or track it, so its current whereabouts and ETA are unknown.",
+    "evidence": [
+      "get_order_details: ORD-1007 for Litware Inc, fulfillment_status SHIPPED from WH-ATL (Atlanta Distribution Center), promised_delivery_date 2026-03-13, investigation_date 2026-03-16, is_past_promised_date true, items include SKU-101 quantity 12.",
+      "get_shipment_status: NOT_FOUND for order ORD-1007 with message \"Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record.\""
+    ],
+    "likely_cause": "unknown (no shipment/tracking record available)",
+    "cause_status": "unknown",
+    "uncertainties": [
+      "Carrier, tracking number, dispatch date, current location, and current ETA are unknown due to missing shipment record.",
+      "Whether the delay is due to carrier transit issues or an internal data/scan error is unknown."
+    ],
+    "recommendation": "Ask the WH-ATL shipping team to retrieve and attach the carrier and tracking number for ORD-1007 and confirm the dispatch date, then trace with the carrier for status and an updated ETA; if no physical shipment exists, correct the order status and ship immediately (consider expediting).",
+    "recommended_source_warehouse": null,
+    "missing_information": [
+      "Shipment record for ORD-1007",
+      "Carrier name",
+      "Tracking number",
+      "Dispatch/hand-off date",
+      "Current estimated delivery date",
+      "Most recent tracking scan/location",
+      "Recorded delay reason, if any"
+    ],
+    "investigation_complete": false
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1007"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "warn",
+        "detail": "only the order's promised date shows lateness; no shipment data confirms it"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "skip",
+        "detail": "report is marked incomplete; database says MISSING_DATA, report says DELAYED_DELIVERY"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1007",
+      "fulfillment_status": "SHIPPED",
+      "short_items": [],
+      "viable_sources": {},
+      "issue_type": "MISSING_DATA"
+    },
+    "tool_errors_seen": "[{\"code\": \"NOT_FOUND\", \"message\": \"Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record.\"}]"
+  }
+}
