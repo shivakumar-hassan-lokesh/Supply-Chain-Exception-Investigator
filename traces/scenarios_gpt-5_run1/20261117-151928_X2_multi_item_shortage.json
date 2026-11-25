@@ -1,0 +1,379 @@
+{
+  "request": "Investigate the hold-up on order ORD-1008.",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "X2_multi_item_shortage",
+    "scenario_passed": true
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I will look up the order details first to see its fulfillment status, warehouse, line items, and promised delivery date.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1432,
+        "output_tokens": 251
+      },
+      "tool_requests": [
+        {
+          "id": "call_9thiIWpePrHgtY1Jyhf3pIU8",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1008"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_9thiIWpePrHgtY1Jyhf3pIU8",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1008"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 2.85
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1008",
+          "customer_name": "Woodgrove Clinic",
+          "fulfillment_warehouse_id": "WH-DAL",
+          "fulfillment_warehouse_name": "Dallas Distribution Center",
+          "order_date": "2026-03-11",
+          "promised_delivery_date": "2026-03-17",
+          "fulfillment_status": "PENDING_FULFILLMENT",
+          "items": [
+            {
+              "sku": "SKU-303",
+              "product_name": "LED Panel Light 60W",
+              "quantity": 30
+            },
+            {
+              "sku": "SKU-606",
+              "product_name": "Nitrile Safety Gloves (box of 100)",
+              "quantity": 100
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": 1,
+          "is_past_promised_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I will check inventory for each ordered SKU at WH-DAL to see if the warehouse can fulfill the quantities.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1681,
+        "output_tokens": 381
+      },
+      "tool_requests": [
+        {
+          "id": "call_u28pNamF9ohXJrzdVgZLUrVi",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-303",
+            "warehouse_id": "WH-DAL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_u28pNamF9ohXJrzdVgZLUrVi",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-303",
+        "warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 1.75
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-303",
+          "warehouse_id": "WH-DAL",
+          "on_hand": 22,
+          "reserved": 2,
+          "available": 20,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "I will check inventory for SKU-606 at WH-DAL to confirm whether there is enough stock for that line item.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1798,
+        "output_tokens": 639
+      },
+      "tool_requests": [
+        {
+          "id": "call_q9pVoYyvdZCPKgghuVtAE96r",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-606",
+            "warehouse_id": "WH-DAL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "tool_execution",
+      "tool_call_id": "call_q9pVoYyvdZCPKgghuVtAE96r",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-606",
+        "warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 3.52
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-606",
+          "warehouse_id": "WH-DAL",
+          "on_hand": 250,
+          "reserved": 0,
+          "available": 250,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 7,
+      "type": "model_turn",
+      "text": "I will search other warehouses for SKU-303 to see if a single location can cover the shortfall of 10 units for a transfer recommendation.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 1917,
+        "output_tokens": 333
+      },
+      "tool_requests": [
+        {
+          "id": "call_HXQMMxN40xjxPkmbIttbRH36",
+          "name": "find_alternative_stock",
+          "arguments": {
+            "sku": "SKU-303",
+            "required_quantity": 10,
+            "exclude_warehouse_id": "WH-DAL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 8,
+      "type": "tool_execution",
+      "tool_call_id": "call_HXQMMxN40xjxPkmbIttbRH36",
+      "name": "find_alternative_stock",
+      "arguments": {
+        "sku": "SKU-303",
+        "required_quantity": 10,
+        "exclude_warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.find_alternative_stock",
+        "executed": true,
+        "duration_ms": 1.8
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-303",
+          "required_quantity": 10,
+          "excluded_warehouse_id": "WH-DAL",
+          "warehouses_checked": [
+            {
+              "warehouse_id": "WH-BOS",
+              "warehouse_name": "Boston Distribution Center",
+              "available": 50,
+              "can_cover_required_quantity": true
+            },
+            {
+              "warehouse_id": "WH-ATL",
+              "warehouse_name": "Atlanta Distribution Center",
+              "available": 6,
+              "can_cover_required_quantity": false
+            },
+            {
+              "warehouse_id": "WH-CHI",
+              "warehouse_name": "Chicago Distribution Center",
+              "available": 5,
+              "can_cover_required_quantity": false
+            }
+          ],
+          "warehouses_with_sufficient_stock": [
+            "WH-BOS"
+          ],
+          "total_available_in_checked_warehouses": 61
+        }
+      }
+    },
+    {
+      "step": 9,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2161,
+        "output_tokens": 1591
+      },
+      "tool_requests": [
+        {
+          "id": "call_Rj9EuwrAHvzBM627ikTa1bup",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1008",
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "summary": "Order ORD-1008 is on hold due to a shortage of SKU-303 at the assigned warehouse WH-DAL; other line items have sufficient stock. A single alternative warehouse (WH-BOS) can cover the 10-unit shortfall for transfer.",
+            "evidence": [
+              "get_order_details: ORD-1008 fulfillment_status PENDING_FULFILLMENT at WH-DAL (Dallas Distribution Center), promised_delivery_date 2026-03-17, is_past_promised_date false.",
+              "check_inventory: SKU-303 at WH-DAL available 20 (ordered 30), on_hand 22, reserved 2.",
+              "check_inventory: SKU-606 at WH-DAL available 250 (ordered 100), on_hand 250, reserved 0.",
+              "find_alternative_stock: SKU-303 required_quantity 10 excluding WH-DAL \u2014 WH-BOS available 50 can_cover_required_quantity true; WH-ATL available 6 false; WH-CHI available 5 false."
+            ],
+            "likely_cause": "Insufficient stock of SKU-303 at WH-DAL (available 20 vs ordered 30) preventing fulfillment.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "Whether an inter-warehouse transfer can arrive at WH-DAL in time to meet the 2026-03-17 promised date without expediting."
+            ],
+            "recommendation": "Arrange an inter-warehouse transfer today of 10 units of SKU-303 from WH-BOS to WH-DAL and expedite the move so the order can be picked and shipped to meet the 2026-03-17 promise.",
+            "recommended_source_warehouse": "WH-BOS",
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 10,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1008",
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "summary": "Order ORD-1008 is on hold due to a shortage of SKU-303 at the assigned warehouse WH-DAL; other line items have sufficient stock. A single alternative warehouse (WH-BOS) can cover the 10-unit shortfall for transfer.",
+        "evidence": [
+          "get_order_details: ORD-1008 fulfillment_status PENDING_FULFILLMENT at WH-DAL (Dallas Distribution Center), promised_delivery_date 2026-03-17, is_past_promised_date false.",
+          "check_inventory: SKU-303 at WH-DAL available 20 (ordered 30), on_hand 22, reserved 2.",
+          "check_inventory: SKU-606 at WH-DAL available 250 (ordered 100), on_hand 250, reserved 0.",
+          "find_alternative_stock: SKU-303 required_quantity 10 excluding WH-DAL \u2014 WH-BOS available 50 can_cover_required_quantity true; WH-ATL available 6 false; WH-CHI available 5 false."
+        ],
+        "likely_cause": "Insufficient stock of SKU-303 at WH-DAL (available 20 vs ordered 30) preventing fulfillment.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "Whether an inter-warehouse transfer can arrive at WH-DAL in time to meet the 2026-03-17 promised date without expediting."
+        ],
+        "recommendation": "Arrange an inter-warehouse transfer today of 10 units of SKU-303 from WH-BOS to WH-DAL and expedite the move so the order can be picked and shipped to meet the 2026-03-17 promise.",
+        "recommended_source_warehouse": "WH-BOS",
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1008",
+    "issue_type": "INSUFFICIENT_INVENTORY",
+    "summary": "Order ORD-1008 is on hold due to a shortage of SKU-303 at the assigned warehouse WH-DAL; other line items have sufficient stock. A single alternative warehouse (WH-BOS) can cover the 10-unit shortfall for transfer.",
+    "evidence": [
+      "get_order_details: ORD-1008 fulfillment_status PENDING_FULFILLMENT at WH-DAL (Dallas Distribution Center), promised_delivery_date 2026-03-17, is_past_promised_date false.",
+      "check_inventory: SKU-303 at WH-DAL available 20 (ordered 30), on_hand 22, reserved 2.",
+      "check_inventory: SKU-606 at WH-DAL available 250 (ordered 100), on_hand 250, reserved 0.",
+      "find_alternative_stock: SKU-303 required_quantity 10 excluding WH-DAL \u2014 WH-BOS available 50 can_cover_required_quantity true; WH-ATL available 6 false; WH-CHI available 5 false."
+    ],
+    "likely_cause": "Insufficient stock of SKU-303 at WH-DAL (available 20 vs ordered 30) preventing fulfillment.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "Whether an inter-warehouse transfer can arrive at WH-DAL in time to meet the 2026-03-17 promised date without expediting."
+    ],
+    "recommendation": "Arrange an inter-warehouse transfer today of 10 units of SKU-303 from WH-BOS to WH-DAL and expedite the move so the order can be picked and shipped to meet the 2026-03-17 promise.",
+    "recommended_source_warehouse": "WH-BOS",
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1008"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed available < ordered for SKU-303@WH-DAL (20)"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "pass",
+        "detail": "WH-BOS has enough available stock to cover the shortfall (database confirmed)"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says INSUFFICIENT_INVENTORY, report says INSUFFICIENT_INVENTORY"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1008",
+      "fulfillment_status": "PENDING_FULFILLMENT",
+      "short_items": [
+        {
+          "sku": "SKU-303",
+          "required": 30,
+          "available": 20,
+          "shortfall": 10
+        }
+      ],
+      "viable_sources": {
+        "SKU-303": [
+          "WH-BOS"
+        ]
+      },
+      "issue_type": "INSUFFICIENT_INVENTORY"
+    },
+    "tool_errors_seen": "[]"
+  }
+}

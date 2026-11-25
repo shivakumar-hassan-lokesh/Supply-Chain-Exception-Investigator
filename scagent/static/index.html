@@ -1,0 +1,1541 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exception Investigator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%236366f1'/%3E%3Cpath d='M5 8.5l7-3.5 7 3.5-7 3.5-7-3.5zM5 8.5v7l7 3.5 7-3.5v-7M12 12v7' fill='none' stroke='white' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* =============================== tokens =============================== */
+  :root {
+    --bg: #0a0d14; --bg-2: #0d111a; --surface: #121722; --surface-2: #171d2a; --surface-3: #1d2433;
+    --ink: #e8ebf2; --ink-2: #c2c8d4; --muted: #8a94a6; --line: #232b3a; --line-2: #2e3849;
+    --accent: #8b8cff; --accent-2: #a7a8ff; --accent-ink: #0a0d14; --accent-soft: rgba(139,140,255,.13);
+    --cyan: #22d3ee; --grad: linear-gradient(135deg, #8b8cff 0%, #60a5fa 50%, #22d3ee 100%);
+    --ok: #4ade80; --ok-bg: rgba(74,222,128,.12); --warn: #fbbf24; --warn-bg: rgba(251,191,36,.12);
+    --bad: #f87171; --bad-bg: rgba(248,113,113,.13); --skip: #8a94a6; --skip-bg: rgba(138,148,166,.13);
+    --info: #38bdf8; --info-bg: rgba(56,189,248,.12); --model: #c4b5fd; --model-bg: rgba(196,181,253,.12);
+    --t-order: #60a5fa; --t-ship: #2dd4bf; --t-inv: #fbbf24; --t-alt: #fb923c; --t-alert: #f472b6;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-up: 0 1px 0 rgba(255,255,255,.04) inset, 0 18px 36px -16px rgba(0,0,0,.75);
+    --glow-1: rgba(99,102,241,.16); --glow-2: rgba(34,211,238,.09);
+    --radius: 16px; --ease: cubic-bezier(.2,.7,.2,1);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --display: "Space Grotesk", var(--font);
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f3f4f9; --bg-2: #eef0f7; --surface: #ffffff; --surface-2: #f7f8fc; --surface-3: #eef0f6;
+    --ink: #111827; --ink-2: #374151; --muted: #667085; --line: #e3e6ee; --line-2: #d2d6e0;
+    --accent: #4f46e5; --accent-2: #4338ca; --accent-ink: #ffffff; --accent-soft: rgba(79,70,229,.09);
+    --cyan: #0891b2; --grad: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0891b2 100%);
+    --ok: #15803d; --ok-bg: #e7f6ed; --warn: #b45309; --warn-bg: #fdf3e1; --bad: #b91c1c; --bad-bg: #fdecec;
+    --skip: #667085; --skip-bg: #f0f2f5; --info: #0369a1; --info-bg: #e6f2fb; --model: #6d28d9; --model-bg: #f3edff;
+    --t-order: #2563eb; --t-ship: #0d9488; --t-inv: #b45309; --t-alt: #c2410c; --t-alert: #be185d;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 6px 18px -10px rgba(16,24,40,.18);
+    --shadow-up: 0 2px 4px rgba(16,24,40,.06), 0 16px 32px -14px rgba(16,24,40,.28);
+    --glow-1: rgba(79,70,229,.08); --glow-2: rgba(8,145,178,.06);
+    color-scheme: light;
+  }
+
+  /* =============================== base =============================== */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font); -webkit-font-smoothing: antialiased; min-height: 100vh;
+         background-image: radial-gradient(900px 500px at 8% -10%, var(--glow-1), transparent 60%),
+                           radial-gradient(800px 500px at 100% 0%, var(--glow-2), transparent 60%);
+         background-attachment: fixed; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  /* Decorative supply-network background (canvas behind everything; see bgNet script) */
+  #bg-net { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+  .icon-btn[aria-pressed="false"] { color: var(--muted); }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  h1, h2, .display { font-family: var(--display); letter-spacing: -.01em; }
+  code, .mono { font-family: var(--mono); font-size: .88em; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 20px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); } .small { font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .spacer { flex: 1; }
+  svg.i { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* tooltips: data-tip on any element; shown on hover and keyboard focus */
+  [data-tip] { position: relative; }
+  /* Hidden tooltips generate no box at all, so they never widen the page. */
+  [data-tip]::after { content: none; }
+  [data-tip]:hover::after, [data-tip]:focus-visible::after {
+    content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); font: 500 12px/1.35 var(--font); padding: 6px 9px; border-radius: 8px; white-space: normal;
+    width: max-content; max-width: 240px; text-align: center; pointer-events: none; z-index: 30; animation: tipIn .16s var(--ease); }
+  [data-tip-pos="end"]:hover::after, [data-tip-pos="end"]:focus-visible::after { left: auto; right: 0; transform: none; animation-name: tipInEnd; }
+  [data-tip-pos="below"]:hover::after, [data-tip-pos="below"]:focus-visible::after { bottom: auto; top: calc(100% + 8px); left: auto; right: 0; transform: none; animation-name: tipInEnd; }
+  @keyframes tipIn { from { opacity: 0; transform: translate(-50%, 4px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes tipInEnd { from { opacity: 0; } to { opacity: 1; } }
+
+  /* =============================== header =============================== */
+  header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 82%, transparent);
+               backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 14px 0 8px; }
+  .logo { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--grad);
+          box-shadow: 0 8px 20px -10px var(--accent); }
+  .logo svg { width: 22px; height: 22px; stroke: #fff; }
+  .brand h1 { font-size: 18px; line-height: 1.2; margin: 0; }
+  .brand .tag { color: var(--muted); font-size: 13px; }
+  .head-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .chip-top { font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+              display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; color: var(--ink-2); }
+  .icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; width: 36px; height: 36px; display: grid; place-items: center; color: var(--ink-2);
+              transition: border-color .15s, transform .15s var(--ease); }
+  .icon-btn:hover { border-color: var(--line-2); transform: translateY(-1px); }
+  nav.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-bottom: 0; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button { border: 0; background: none; color: var(--muted); padding: 11px 14px; font-weight: 500; white-space: nowrap; display: flex; gap: 8px; align-items: center;
+                    position: relative; border-radius: 10px 10px 0 0; transition: color .15s; }
+  nav.tabs button::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--grad);
+                           transform: scaleX(0); transition: transform .25s var(--ease); }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button[aria-selected="true"] { color: var(--ink); }
+  nav.tabs button[aria-selected="true"]::after { transform: scaleX(1); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); display: none; }
+  .live-dot.on { display: inline-block; animation: breathe 1.6s ease-in-out infinite; }
+  .live-dot.done { display: inline-block; background: var(--ok); animation: none; }
+  .live-dot.fail { display: inline-block; background: var(--bad); animation: none; }
+  @keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 rgba(34,211,238,.55); } 50% { box-shadow: 0 0 0 6px rgba(34,211,238,0); } }
+
+  main { padding: 24px 0 80px; }
+  section.tab { animation: tabIn .32s var(--ease); }
+  @keyframes tabIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* =============================== surfaces & controls =============================== */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; min-width: 0; }
+  .card + .card { margin-top: 16px; }
+  .card h2 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .card h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .lift { transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
+  .lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-up); border-color: var(--line-2); }
+  .btn { border: 1px solid var(--line-2); background: var(--surface-2); border-radius: 10px; padding: 8px 13px; font-weight: 500; font-size: 13px;
+         display: inline-flex; gap: 7px; align-items: center; color: var(--ink-2); transition: background .15s, border-color .15s, transform .15s var(--ease); }
+  .btn:hover { background: var(--surface-3); border-color: var(--line-2); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 10px 24px -14px var(--accent); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.block { width: 100%; justify-content: center; padding: 12px; font-size: 15px; font-weight: 600; }
+  .btn.sm { padding: 6px 10px; font-size: 12.5px; }
+  .btn:disabled { opacity: .55; cursor: progress; transform: none; }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; opacity: .75; }
+  label.lbl { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin: 0 0 6px; }
+  textarea, input[type="search"], input[type="password"], select {
+    width: 100%; padding: 11px 12px; border: 1px solid var(--line-2); border-radius: 11px; background: var(--bg-2); resize: vertical;
+    transition: border-color .15s, box-shadow .15s; }
+  textarea { min-height: 104px; }
+  textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .pill { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+  .pill.ok, .pill.pass { background: var(--ok-bg); color: var(--ok); }
+  .pill.bad, .pill.fail { background: var(--bad-bg); color: var(--bad); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.skip { background: var(--skip-bg); color: var(--skip); }
+  .pill.info { background: var(--info-bg); color: var(--info); }
+  .pill.model { background: var(--model-bg); color: var(--model); }
+  .pill.run { background: var(--accent-soft); color: var(--accent); }
+  .switch { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; cursor: pointer; }
+  .switch input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line-2); position: relative; flex: none; cursor: pointer; transition: background .15s; margin: 0; }
+  .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .18s var(--ease); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .switch input:checked { background: var(--bad); }
+  .switch input:checked::after { transform: translateX(14px); }
+
+  /* animated disclosure: grid rows 0fr -> 1fr */
+  .exp { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+  .exp > .exp-h { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 11px 13px; font-weight: 600; font-size: 13.5px; border-radius: 12px; }
+  .exp > .exp-h .chev { transition: transform .25s var(--ease); color: var(--muted); }
+  .exp.open > .exp-h .chev { transform: rotate(90deg); }
+  .exp > .exp-b { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
+  .exp.open > .exp-b { grid-template-rows: 1fr; }
+  .exp > .exp-b > div { overflow: hidden; min-height: 0; }
+  .exp > .exp-b > div > .pad { padding: 0 13px 12px; }
+  .exp + .exp { margin-top: 8px; }
+
+  /* =============================== investigate =============================== */
+  .layout { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 22px; align-items: start; }
+  .composer { position: sticky; top: 118px; }
+  @media (max-width: 1020px) { .layout { grid-template-columns: minmax(0, 1fr); } .composer { position: static; } }
+  .counter { font-size: 11.5px; color: var(--muted); text-align: right; margin-top: 4px; }
+  .sect-title { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; flex-wrap: wrap; }
+  .sect-title h2 { font-size: 18px; margin: 0; }
+  .filters { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .scen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .scen { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; min-width: 0;
+          cursor: pointer; position: relative; overflow: hidden; }
+  .scen::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--c, var(--accent)); opacity: .85; }
+  .scen.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow-up); }
+  .scen .cat { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--c, var(--accent)); display: flex; gap: 6px; align-items: center; }
+  .scen .t { font-family: var(--display); font-weight: 600; font-size: 15.5px; line-height: 1.3; }
+  .scen .d { color: var(--muted); font-size: 13px; flex: 1; }
+  .scen .q { font-size: 12.5px; color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; }
+  .progress { position: relative; overflow: hidden; }
+  .progress.running { border-color: color-mix(in srgb, var(--cyan) 45%, var(--line)); }
+  .progress.running::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: var(--grad); background-size: 200% 100%; animation: sweep 2.2s linear infinite; }
+  @keyframes sweep { from { background-position: 200% 0; } to { background-position: 0 0; } }
+  .prog-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .prog-state { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--accent-soft); color: var(--accent); }
+  .prog-state.ok { background: var(--ok-bg); color: var(--ok); } .prog-state.bad { background: var(--bad-bg); color: var(--bad); }
+  .prog-state svg { width: 20px; height: 20px; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .stats b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
+  .chips .p { padding: 2px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 500; }
+
+  .results { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+  @media (max-width: 1180px) { .results { grid-template-columns: minmax(0, 1fr); } }
+  .results > .card + .card, .results .card + .card { margin-top: 0; }
+  .results > div > .card + .card { margin-top: 16px; }
+  .issue-hero { display: flex; gap: 14px; align-items: flex-start; }
+  .issue-icon { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+  .issue-icon svg { width: 24px; height: 24px; }
+  .sev-warn { background: var(--warn-bg); color: var(--warn); } .sev-ok { background: var(--ok-bg); color: var(--ok); } .sev-info { background: var(--skip-bg); color: var(--ink-2); }
+  .issue-title { font-family: var(--display); font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .summary-text { margin: 8px 0 0; color: var(--ink-2); }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+  .kv > div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; min-width: 0; }
+  .kv .k { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .kv .v { font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
+  .actions { display: grid; gap: 10px; }
+  .action { display: flex; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; background: var(--surface-2); }
+  .action .num { width: 26px; height: 26px; border-radius: 8px; background: var(--grad); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; flex: none; }
+  .action .name { font-weight: 600; font-size: 14px; }
+  .action .det { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; overflow-wrap: anywhere; }
+  ul.ev { list-style: none; padding: 0; margin: 0; display: grid; gap: 7px; }
+  ul.ev li { font-size: 13.5px; overflow-wrap: anywhere; padding-left: 12px; border-left: 2px solid var(--c, var(--line-2)); }
+  ul.plain { margin: 0; padding-left: 18px; font-size: 13.5px; } ul.plain li { overflow-wrap: anywhere; }
+  .src-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--c, var(--muted)); flex: none; }
+  .ring-wrap { display: flex; align-items: center; gap: 16px; }
+  .ring { width: 92px; height: 92px; flex: none; }
+  .ring circle { fill: none; stroke-width: 9; } .ring .bg { stroke: var(--line); }
+  .ring .fg { stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s var(--ease); }
+  .ring text { font: 700 20px var(--display); fill: var(--ink); } .ring .sub { font: 500 10px var(--font); fill: var(--muted); }
+  .verdict { font-family: var(--display); font-size: 20px; font-weight: 700; }
+  .verdict.PASS { color: var(--ok); } .verdict.FAIL { color: var(--bad); }
+  .checks { list-style: none; padding: 0; margin: 0; }
+  .checks li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .checks li:first-child { border-top: 0; }
+  .checks .cn { font-weight: 600; } .checks .cd { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+  table.cmp th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-top: 0; }
+  .yes { color: var(--ok); font-weight: 700; } .no { color: var(--bad); font-weight: 700; }
+  .banner { display: flex; gap: 10px; align-items: center; background: var(--info-bg); color: var(--info); border-radius: 11px; padding: 9px 12px; font-size: 13px; }
+  .banner.warnb { background: var(--warn-bg); color: var(--warn); } .banner.badb { background: var(--bad-bg); color: var(--bad); }
+
+  /* =============================== live investigation =============================== */
+  .live-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
+  .live-side { position: sticky; top: 118px; }
+  @media (max-width: 1020px) { .live-layout { grid-template-columns: minmax(0, 1fr); } .live-side { position: static; } }
+  .flow { display: flex; align-items: center; overflow-x: auto; padding: 8px 2px 4px; }
+  .node { flex: 1 1 0; min-width: 62px; max-width: 110px; text-align: center; position: relative; }
+  .node .bubble { width: 44px; height: 44px; margin: 0 auto; border-radius: 13px; display: grid; place-items: center; border: 1.5px dashed var(--line-2);
+                  color: var(--muted); background: var(--surface-2); transition: all .3s var(--ease); position: relative; }
+  .node .bubble svg { width: 20px; height: 20px; }
+  .node .nlbl { font-size: 11.5px; font-weight: 600; margin-top: 7px; color: var(--muted); line-height: 1.25; min-height: 2.5em; }
+  .node .cnt { position: absolute; top: -7px; right: -9px; background: var(--ink); color: var(--bg); font-size: 10.5px; font-weight: 700; min-width: 19px; height: 19px;
+               border-radius: 999px; display: none; place-items: center; padding: 0 5px; }
+  .node.used .cnt { display: grid; }
+  .node.used .bubble, .node.done .bubble { border-style: solid; color: #fff; background: var(--c); border-color: var(--c); box-shadow: 0 8px 20px -10px var(--c); }
+  .node.used .nlbl, .node.done .nlbl { color: var(--ink); }
+  .node.active .bubble { border-style: solid; border-color: var(--c); color: var(--c); animation: nodePulse 1.4s ease-in-out infinite; }
+  .node.error .bubble { background: var(--bad) !important; border-color: var(--bad) !important; color: #fff; }
+  .node.missing .bubble { background: var(--warn) !important; border-color: var(--warn) !important; color: #111; }
+  .node.failv .bubble { background: var(--bad); border-color: var(--bad); color: #fff; border-style: solid; }
+  @keyframes nodePulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 50%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  .link { flex: 0 1 26px; height: 2px; background: var(--line-2); margin-bottom: 30px; min-width: 6px; transition: background .3s; }
+  .link.lit { background: var(--grad); }
+  .tl-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .timeline { position: relative; display: flex; flex-direction: column; gap: 12px; padding-left: 22px; }
+  .timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--line-2), transparent); border-radius: 2px; }
+  .ev { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+        animation: floatIn .38s var(--ease); min-width: 0; transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s; }
+  .ev:hover { transform: translateY(-2px); box-shadow: var(--shadow-up); }
+  .ev::before { content: ""; position: absolute; left: -21px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--c, var(--line-2)); }
+  @keyframes floatIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+  .ev .ev-h { width: 100%; display: flex; gap: 10px; align-items: flex-start; text-align: left; background: none; border: 0; padding: 13px 14px; border-radius: 14px; }
+  .ev .ev-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--c, var(--muted)) 16%, transparent); color: var(--c, var(--muted)); }
+  .ev .ev-main { min-width: 0; flex: 1; }
+  .ev .ev-t { font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ev .ev-s { color: var(--ink-2); font-size: 13.5px; margin-top: 3px; overflow-wrap: anywhere; }
+  .ev .ev-s ul { margin: 4px 0 0; padding-left: 18px; }
+  .ev .ev-meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  .ev .chev { color: var(--muted); transition: transform .25s var(--ease); margin-top: 8px; }
+  .ev.open .chev { transform: rotate(90deg); }
+  .ev .ev-b { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
+  .ev.open .ev-b { grid-template-rows: 1fr; }
+  .ev .ev-b > div { overflow: hidden; min-height: 0; }
+  .ev .ev-b .pad { padding: 0 14px 14px 56px; }
+  .ev.model { --c: var(--model); } .ev.req { --c: var(--accent); }
+  .ev.s-running { border-color: color-mix(in srgb, var(--cyan) 50%, var(--line)); }
+  .ev.s-running::before { animation: breathe 1.6s ease-in-out infinite; border-color: var(--cyan); }
+  .ev.s-ok::before { background: var(--c); }
+  .ev.s-fail { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); --c: var(--bad); }
+  .ev.s-missing { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+  .ev.s-missing::before { border-color: var(--warn); background: var(--warn); }
+  .ev.s-fail::before { background: var(--bad); }
+  .ev.s-warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); --c: var(--warn); }
+  pre { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: 12px/1.5 var(--mono); overflow: auto; max-height: 340px; margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); }
+  .k-lbl { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+  .empty { text-align: center; padding: 38px 12px; color: var(--muted); }
+  .empty .big { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 16px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .empty .big svg { width: 26px; height: 26px; }
+  .recent { list-style: none; margin: 0; padding: 0; }
+  .recent li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; min-width: 0; }
+  .recent li:first-child { border-top: 0; }
+  .recent .r-main { min-width: 0; flex: 1; } .recent .r-main div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .status-dot.PASS { background: var(--ok); } .status-dot.FAIL { background: var(--bad); } .status-dot.none { background: var(--line-2); }
+  .switch-row { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+
+  /* =============================== orders =============================== */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .toolbar .search { flex: 1 1 260px; position: relative; }
+  .toolbar .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .toolbar .search input { padding-left: 38px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 11px; overflow: hidden; background: var(--surface-2); flex-wrap: wrap; }
+  .seg button { border: 0; background: none; padding: 8px 12px; font-size: 13px; color: var(--muted); font-weight: 500; transition: background .15s, color .15s; }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+  .ogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .ocard { text-align: left; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px; box-shadow: var(--shadow); min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ocard .oid { font-family: var(--mono); font-weight: 600; font-size: 14px; }
+  .ocard .cust { font-weight: 600; margin-top: 4px; }
+  .ocard .meta { color: var(--muted); font-size: 12.5px; }
+  .ocard .o-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .late { color: var(--bad); font-weight: 600; }
+  .drawer-bg { position: fixed; inset: 0; background: rgba(5,8,15,.6); z-index: 40; animation: fade .2s; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--surface); z-index: 41; box-shadow: var(--shadow-up);
+            overflow-y: auto; padding: 20px; animation: slide .28s var(--ease); border-left: 1px solid var(--line); }
+  @keyframes fade { from { opacity: 0; } } @keyframes slide { from { transform: translateX(36px); opacity: 0; } }
+  .tl { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px solid var(--line); }
+  .tl li { position: relative; padding: 0 0 12px 12px; font-size: 13.5px; }
+  .tl li::before { content: ""; position: absolute; left: -25px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--t-ship); }
+  .tl li.delay::before { border-color: var(--bad); background: var(--bad-bg); } .tl li.deliv::before { border-color: var(--ok); background: var(--ok); }
+  .tl .d { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.grid th, table.grid td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+  table.grid th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .hl { background: var(--accent-soft); } .short { color: var(--bad); font-weight: 600; }
+  .alert-box { border: 1px solid var(--line); border-left: 4px solid var(--t-alert); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; margin-bottom: 8px; background: var(--surface-2); }
+
+  /* =============================== evaluation =============================== */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .metric { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: var(--surface-2); }
+  .metric .mv { font-family: var(--display); font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+  .metric .ml { font-weight: 600; font-size: 13.5px; } .metric .mh { color: var(--muted); font-size: 12px; }
+  .bar { height: 7px; border-radius: 999px; background: var(--line); margin-top: 10px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent); width: 0; transition: width 1s var(--ease); }
+  .bar.good > i { background: var(--ok); } .bar.mid > i { background: var(--warn); } .bar.low > i { background: var(--bad); }
+  table.matrix { border-collapse: separate; border-spacing: 4px; font-size: 13px; }
+  table.matrix th { font-size: 11px; color: var(--muted); font-weight: 600; text-align: left; padding: 2px 6px; }
+  table.matrix td.sc { padding: 2px 10px 2px 0; white-space: nowrap; }
+  .cell { width: 66px; height: 32px; border-radius: 9px; border: 0; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: transform .15s var(--ease); }
+  .cell:hover { transform: translateY(-1px); }
+  .cell.p { background: var(--ok-bg); color: var(--ok); } .cell.f { background: var(--bad-bg); color: var(--bad); }
+  .cell[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* =============================== how it works =============================== */
+  .how-hero { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .how-hero h2 { font-size: 22px; margin: 0; }
+  .flash-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+  @media (max-width: 1180px) { .flash-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .flash-grid { grid-template-columns: minmax(0, 1fr); } }
+  .flash { display: block; width: 100%; perspective: 1200px; border: 0; background: none; padding: 0; text-align: left; min-height: 250px; border-radius: var(--radius); color: inherit; }
+  .flash-inner { display: block; position: relative; width: 100%; height: 100%; min-height: 250px; transform-style: preserve-3d; transition: transform .6s var(--ease); }
+  .flash[aria-pressed="true"] .flash-inner { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius); border: 1px solid var(--line);
+          background: var(--surface); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 8px; overflow: auto;
+          transition: border-color .2s, box-shadow .2s, transform .2s var(--ease); }
+  .flash:hover .face.front { border-color: var(--line-2); box-shadow: var(--shadow-up); }
+  .face.back { transform: rotateY(180deg); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, var(--surface)), var(--surface)); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+  .flash.current .face { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), var(--shadow-up); }
+  .face > span { display: block; }
+  .face .f-hint { display: flex; }
+  .face .f-num { font: 700 12px var(--mono); color: var(--c); }
+  .face .f-ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); }
+  .face .f-ic svg { width: 22px; height: 22px; }
+  .face .f-t { font-family: var(--display); font-weight: 600; font-size: 16px; }
+  .face .f-d { color: var(--ink-2); font-size: 13.5px; flex: 1; }
+  .face .f-hint { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .face .f-ex { font: 12px/1.5 var(--mono); color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px; overflow-wrap: anywhere; }
+  .walk { margin-top: 18px; }
+  .walk-steps { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+  .walk-steps button { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface-2); font: 600 12px var(--mono); color: var(--muted); transition: all .2s var(--ease); }
+  .walk-steps button.past { color: var(--ink-2); border-color: var(--accent); }
+  .walk-steps button[aria-current="step"] { background: var(--grad); color: #fff; border-color: transparent; }
+  .walk-body { border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); padding: 16px; animation: floatIn .35s var(--ease); }
+  .walk-body .stage { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c); display: flex; gap: 6px; align-items: center; }
+  .walk-body h4 { font-family: var(--display); font-size: 17px; margin: 6px 0; }
+  .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+  .path-card { border: 1px solid var(--line); border-radius: 14px; padding: 13px; background: var(--surface-2); font-size: 13.5px; }
+  .path-card b { display: block; margin-bottom: 6px; }
+  .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .how-item { border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; background: var(--surface); min-width: 0; }
+  .how-item b { display: flex; gap: 8px; align-items: center; font-size: 13.5px; }
+  .how-item p { margin: 5px 0 0; font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+
+  /* =============================== toasts =============================== */
+  .toasts { position: fixed; bottom: 18px; right: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 60; max-width: calc(100vw - 36px); }
+  .toast { display: flex; gap: 9px; align-items: center; background: var(--surface-3); color: var(--ink); border: 1px solid var(--line-2); padding: 10px 14px; border-radius: 12px; box-shadow: var(--shadow-up); font-size: 13.5px; animation: floatIn .25s var(--ease); }
+  .toast.ok svg { color: var(--ok); } .toast.err { border-color: color-mix(in srgb, var(--bad) 55%, var(--line)); } .toast.err svg { color: var(--bad); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 0 12px; } .card { padding: 14px; }
+    .brand .tag { display: none; }
+    .brand > div:nth-child(2) { min-width: 0; flex: 1; }
+    .brand h1 { font-size: 15px; }
+    .logo { width: 34px; height: 34px; }
+    #date-chip > span { display: none; }
+    #date-chip { padding: 5px 8px; }
+    .node { min-width: 54px; } .node .bubble { width: 36px; height: 36px; } .node .bubble svg { width: 17px; height: 17px; }
+    .issue-title { font-size: 18px; } .ev .ev-b .pad { padding-left: 14px; }
+    .ev .ev-meta { display: none; }
+  }
+  /* ============================ glossy glass ============================ */
+  :root { --glass-alpha: 70%; --glass-line: rgba(255,255,255,.085); --gloss-hi: rgba(255,255,255,.065);
+          --gloss-edge: rgba(255,255,255,.09); --gloss-spot: rgba(150,160,255,.11); }
+  :root[data-theme="light"] { --glass-alpha: 68%; --glass-line: rgba(17,24,39,.08); --gloss-hi: rgba(255,255,255,.75);
+          --gloss-edge: rgba(255,255,255,.95); --gloss-spot: rgba(79,70,229,.07); }
+  .card, .scen, .ocard {
+    position: relative; border-color: var(--glass-line);
+    background: linear-gradient(155deg, var(--gloss-hi) 0%, transparent 42%), color-mix(in srgb, var(--surface) var(--glass-alpha), transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%);
+    box-shadow: inset 0 1px 0 var(--gloss-edge), var(--shadow);
+  }
+  /* soft light that follows the pointer across a panel */
+  .card::after, .scen::after, .ocard::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s var(--ease);
+    background: radial-gradient(360px circle at var(--gx, 50%) var(--gy, 0%), var(--gloss-spot), transparent 62%);
+  }
+  .card:hover::after, .scen:hover::after, .ocard:hover::after { opacity: 1; }
+  .btn.primary { background-image: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0) 55%), var(--grad);
+                 box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 24px -14px var(--accent); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card, .scen, .ocard { background: linear-gradient(155deg, var(--gloss-hi) 0%, transparent 42%), var(--surface); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg-net" aria-hidden="true"></canvas>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-order" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7l8.7 5 8.7-5M12 22V12"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.7-4 3-9 3s-9-1.3-9-3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v.2A3 3 0 0 0 6 9a3 3 0 0 0 .5 1.7A3 3 0 0 0 6 16a3 3 0 0 0 3 3 3 3 0 0 0 3 2 3 3 0 0 0 3-2 3 3 0 0 0 3-3 3 3 0 0 0-.5-5.3A3 3 0 0 0 18 9a3 3 0 0 0-3-2.8V6a3 3 0 0 0-3-3z"/><path d="M12 3v18"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo"><svg class="i"><use href="#i-logo"/></svg></div>
+      <div>
+        <h1>Supply Chain Exception Investigator</h1>
+        <div class="tag">Identifies shipment delays, investigates their causes, and recommends data-driven actions</div>
+      </div>
+      <div class="head-tools">
+        <span class="chip-top" id="date-chip" data-tip-pos="below" data-tip="Fixed investigation date, so results are reproducible"><svg class="i"><use href="#i-clock"/></svg><span>—</span></span>
+        <button class="icon-btn" id="bg-btn" aria-pressed="true" aria-label="Animated background on or off" data-tip-pos="below" data-tip="Animated background: move the mouse over the network, click empty space to dispatch shipments"><svg class="i"><use href="#i-truck"/></svg></button>
+        <button class="icon-btn" id="theme-btn" aria-label="Switch between dark and light theme" data-tip-pos="below" data-tip="Switch theme"><svg class="i"><use href="#i-sun"/></svg></button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="t-investigate" aria-controls="tab-investigate" aria-selected="true" data-tab="investigate"><svg class="i"><use href="#i-search"/></svg>Investigate</button>
+      <button role="tab" id="t-orders" aria-controls="tab-orders" aria-selected="false" data-tab="orders" tabindex="-1"><svg class="i"><use href="#i-box"/></svg>Orders</button>
+      <button role="tab" id="t-live" aria-controls="tab-live" aria-selected="false" data-tab="live" tabindex="-1"><svg class="i"><use href="#i-pulse"/></svg>Live Investigation<span class="live-dot" id="live-dot" aria-hidden="true"></span><span class="sr" id="live-dot-sr"></span></button>
+      <button role="tab" id="t-eval" aria-controls="tab-eval" aria-selected="false" data-tab="eval" tabindex="-1"><svg class="i"><use href="#i-chart"/></svg>Evaluation</button>
+      <button role="tab" id="t-how" aria-controls="tab-how" aria-selected="false" data-tab="how" tabindex="-1"><svg class="i"><use href="#i-info"/></svg>How it works</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================================ INVESTIGATE ================================ -->
+  <section class="tab" id="tab-investigate" role="tabpanel" aria-labelledby="t-investigate">
+    <div class="layout">
+      <aside class="composer">
+        <div class="card">
+          <div class="card-head"><h2><svg class="i"><use href="#i-msg"/></svg>Ask the agent</h2></div>
+          <label class="lbl" for="order-select">Order (optional)</label>
+          <select id="order-select" aria-describedby="order-help"><option value="">Choose an order…</option></select>
+          <div class="small muted" id="order-help" style="margin:4px 0 12px">Choosing an order fills in a starter question.</div>
+          <label class="lbl" for="request">Your question</label>
+          <textarea id="request" maxlength="500" placeholder="e.g. Investigate why order ORD-1003 is delayed."></textarea>
+          <div class="counter"><span id="count">0</span>/500</div>
+          <div id="code-row" class="hidden" style="margin-top:8px">
+            <input id="code" type="password" autocomplete="off" placeholder="Access code (press Enter)" aria-label="Access code">
+          </div>
+          <div class="exp" id="demo-controls" style="margin-top:12px">
+            <button class="exp-h" aria-expanded="false" aria-controls="demo-body"><svg class="i"><use href="#i-sliders"/></svg><span>Demo controls</span><span class="spacer"></span><span class="pill warn hidden" id="outage-count"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+            <div class="exp-b" id="demo-body"><div><div class="pad">
+              <div class="small muted" style="margin-bottom:4px">Simulate a tool outage to show how the agent handles failures. The tool returns a real error; nothing else changes.</div>
+              <div id="fail-tools"></div>
+            </div></div></div>
+          </div>
+          <button class="btn primary block" id="run" style="margin-top:14px"><svg class="i"><use href="#i-play"/></svg><span>Run investigation</span><kbd>Ctrl/⌘ Enter</kbd></button>
+          <div class="small muted" style="margin-top:9px">Read-only: the agent recommends actions but never changes orders or contacts anyone.</div>
+        </div>
+      </aside>
+
+      <section aria-label="Progress, report and scenarios">
+        <div class="card progress hidden" id="progress" aria-live="polite"></div>
+        <div class="results hidden" id="results">
+          <div class="card" id="report-card"></div>
+          <div><div class="card" id="verify-card"></div><div class="card" id="compare-card"></div></div>
+        </div>
+        <div id="scenarios-wrap" style="margin-top:0">
+          <div class="sect-title" id="scen-title">
+            <h2>Choose a scenario</h2>
+            <span class="muted small">Each one tests a different situation in the fictional data.</span>
+            <span class="spacer"></span>
+            <div class="seg" id="scen-filter" role="group" aria-label="Filter scenarios">
+              <button aria-pressed="true" data-f="all">All</button>
+              <button aria-pressed="false" data-f="delay">Delays</button>
+              <button aria-pressed="false" data-f="inventory">Inventory</button>
+              <button aria-pressed="false" data-f="edge">Edge cases</button>
+            </div>
+          </div>
+          <div class="scen-grid" id="scenarios"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ================================ ORDERS ================================ -->
+  <section class="tab hidden" id="tab-orders" role="tabpanel" aria-labelledby="t-orders">
+    <div class="sect-title"><h2>Orders</h2><span class="muted small">Every record in the fictional database. Open one to see what the agent could see.</span></div>
+    <div class="toolbar">
+      <div class="search"><svg class="i"><use href="#i-search"/></svg><input type="search" id="o-search" placeholder="Search order, customer, SKU, carrier, warehouse…" aria-label="Search orders"></div>
+      <div class="seg" id="o-filter" role="group" aria-label="Filter by status">
+        <button aria-pressed="true" data-f="all">All</button>
+        <button aria-pressed="false" data-f="PENDING_FULFILLMENT">Pending</button>
+        <button aria-pressed="false" data-f="SHIPPED">Shipped</button>
+        <button aria-pressed="false" data-f="DELIVERED">Delivered</button>
+        <button aria-pressed="false" data-f="late">Past promise</button>
+      </div>
+    </div>
+    <div class="small muted" id="o-count" style="margin-bottom:10px"></div>
+    <div class="ogrid" id="o-grid"><div class="empty"><div class="spinner" style="margin:0 auto"></div></div></div>
+  </section>
+
+  <!-- ================================ LIVE INVESTIGATION ================================ -->
+  <section class="tab hidden" id="tab-live" role="tabpanel" aria-labelledby="t-live">
+    <div class="live-layout">
+      <div>
+        <div class="card">
+          <div class="card-head">
+            <h2><svg class="i"><use href="#i-pulse"/></svg>Agent decision map</h2>
+            <span class="spacer"></span>
+            <div class="stats"><span>Events <b id="st-step">0</b></span><span>Tool calls <b id="st-calls">0</b>/<b id="st-max">8</b></span><span>Elapsed <b id="st-time">—</b></span></div>
+          </div>
+          <div class="flow" id="flow" aria-label="Tools used in this investigation"></div>
+          <div class="chips" id="path"><span class="muted small">Tools light up only when the model actually calls them.</span></div>
+        </div>
+        <div class="card">
+          <div class="card-head" style="margin-bottom:6px"><h2>Execution timeline</h2></div>
+          <div class="tl-bar">
+            <button class="btn sm" id="exp-all" data-tip="Open every card to inspect arguments and returned data">Expand all</button>
+            <button class="btn sm" id="col-all">Collapse all</button>
+            <span class="spacer"></span>
+            <label class="switch-row" data-tip-pos="end" data-tip="Keep the newest event in view while a run is in progress"><span class="switch"><input type="checkbox" id="autoscroll" checked></span>Auto-scroll</label>
+          </div>
+          <div id="live-banner"></div>
+          <div class="timeline" id="timeline" aria-live="polite" aria-relevant="additions">
+            <div class="empty" style="margin-left:-22px"><div class="big"><svg class="i"><use href="#i-pulse"/></svg></div><b>No investigation yet</b>
+              <div class="small">Start one from Investigate, or replay a saved run. Every card here is a real event from the agent.</div></div>
+          </div>
+        </div>
+      </div>
+      <aside class="live-side">
+        <div class="card" id="run-summary"><h2>This run</h2><div class="small muted" style="margin-top:8px">Nothing running.</div></div>
+        <div class="card">
+          <div class="card-head"><h2><svg class="i"><use href="#i-replay"/></svg>Saved runs</h2></div>
+          <div class="small muted" style="margin:-6px 0 8px">Replay any recorded run step by step: no model call, no cost.</div>
+          <ul class="recent" id="recent"><li class="muted">Loading…</li></ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================================ EVALUATION ================================ -->
+  <section class="tab hidden" id="tab-eval" role="tabpanel" aria-labelledby="t-eval">
+    <div class="card">
+      <div class="card-head"><h2><svg class="i"><use href="#i-chart"/></svg>How accurately does the agent work?</h2></div>
+      <div class="small muted" style="margin:-6px 0 14px">Every scenario run is scored by Python against the database's own answer (issue, cause, actions) and checked for invented facts. Run with <code>python -m scagent scenarios --repeat 2</code>. It isn't started from this page because it makes many paid model calls.</div>
+      <div id="eval-body"><div class="empty"><div class="spinner" style="margin:0 auto"></div></div></div>
+    </div>
+  </section>
+
+  <!-- ================================ HOW IT WORKS ================================ -->
+  <section class="tab hidden" id="tab-how" role="tabpanel" aria-labelledby="t-how">
+    <div class="card">
+      <div class="how-hero">
+        <div style="flex:1;min-width:260px">
+          <h2>How the agent works</h2>
+          <p class="muted" style="margin:6px 0 0">Five stages, repeated until the model has enough evidence. Click a card (or press Enter) to flip it and see an example.</p>
+        </div>
+        <button class="btn primary" id="walk-btn"><svg class="i"><use href="#i-play"/></svg>Walk through an example</button>
+      </div>
+      <div class="flash-grid" id="flashcards"></div>
+      <div class="walk hidden" id="walk" aria-live="polite"></div>
+    </div>
+    <div class="card">
+      <h2>Investigations take different paths</h2>
+      <p class="small muted" style="margin:6px 0 0">The model picks each tool after reading the previous result, so the path depends on the evidence. These are paths recorded in real runs:</p>
+      <div class="paths" id="paths"></div>
+    </div>
+    <div class="card">
+      <div class="exp" id="ref-tools"><button class="exp-h" aria-expanded="false"><svg class="i"><use href="#i-code"/></svg>Tools the model can choose<span class="spacer"></span><svg class="i chev"><use href="#i-chev"/></svg></button><div class="exp-b"><div><div class="pad"><div class="how-grid" id="tool-list"></div></div></div></div></div>
+      <div class="exp" id="ref-causes"><button class="exp-h" aria-expanded="false"><svg class="i"><use href="#i-search"/></svg>Causes it can identify<span class="spacer"></span><svg class="i chev"><use href="#i-chev"/></svg></button><div class="exp-b"><div><div class="pad"><div class="how-grid" id="cause-list"></div></div></div></div></div>
+      <div class="exp" id="ref-actions"><button class="exp-h" aria-expanded="false"><svg class="i"><use href="#i-report"/></svg>Actions it can recommend (recommend only, never performed)<span class="spacer"></span><svg class="i chev"><use href="#i-chev"/></svg></button><div class="exp-b"><div><div class="pad"><div class="how-grid" id="action-list"></div></div></div></div></div>
+      <div class="exp" id="ref-verify"><button class="exp-h" aria-expanded="false"><svg class="i"><use href="#i-shield"/></svg>Why every report is verified<span class="spacer"></span><svg class="i chev"><use href="#i-chev"/></svg></button><div class="exp-b"><div><div class="pad"><p class="small" style="margin:0;color:var(--ink-2)">A model can sound confident and still be wrong. After every run, Python checks:</p><ul class="plain" style="margin-top:6px"><li>each ID and date in the report came from a tool result,</li><li>the issue and cause are backed by evidence the model actually saw,</li><li>each recommended action has the data it depends on,</li><li>a failure isn't reported as success,</li><li>the issue, cause and actions match the database's own answer.</li></ul></div></div></div></div>
+    </div>
+  </section>
+</main>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, s = sessionStorage) { try { return s.getItem(k); } catch { return null; } },
+    set(k, v, s = sessionStorage) { try { s.setItem(k, v); } catch { /* storage unavailable */ } },
+  };
+  // DOM builder: all text goes through text nodes, never innerHTML.
+  function el(tag, attrs = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+    }
+    for (const c of kids.flat(Infinity)) if (c != null && c !== false) n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    return n;
+  }
+  const put = (node, ...kids) => node.replaceChildren(...kids.flat(Infinity).filter((k) => k != null && k !== false));
+  const NS = "http://www.w3.org/2000/svg";
+  function icon(name, cls = "i") {
+    const s = document.createElementNS(NS, "svg"); s.setAttribute("class", cls); s.setAttribute("aria-hidden", "true");
+    const u = document.createElementNS(NS, "use"); u.setAttribute("href", `#i-${name}`); s.append(u); return s;
+  }
+  const pill = (cls, text) => el("span", { class: `pill ${cls}`, text });
+  const nice = (s) => (s || "").replaceAll("_", " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+  const fmtArgs = (a) => { try { return JSON.stringify(a); } catch { return String(a); } };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function toast(msg, kind = "ok") {
+    const t = el("div", { class: `toast ${kind}` }, icon(kind === "err" ? "alert" : "check"), el("span", { text: msg }));
+    $("toasts").append(t); setTimeout(() => t.remove(), kind === "err" ? 6500 : 2800);
+  }
+  // Animated disclosure helper for .exp blocks (button.exp-h + .exp-b).
+  function wireExp(box, open = false) {
+    const btn = box.querySelector(":scope > .exp-h");
+    const set = (o) => { box.classList.toggle("open", o); btn.setAttribute("aria-expanded", String(o)); };
+    btn.addEventListener("click", () => set(!box.classList.contains("open")));
+    set(open); return set;
+  }
+  function expBlock(title, bodyKids, { open = false, iconName = null, extra = null } = {}) {
+    const box = el("div", { class: "exp" },
+      el("button", { class: "exp-h", "aria-expanded": "false" }, iconName ? icon(iconName) : null, el("span", { text: title }), el("span", { class: "spacer" }), extra, icon("chev", "i chev")),
+      el("div", { class: "exp-b" }, el("div", {}, el("div", { class: "pad" }, bodyKids))));
+    wireExp(box, open); return box;
+  }
+
+  const TOOLS = {
+    get_order_details: { label: "Order details", icon: "order", c: "var(--t-order)", data: "orders" },
+    get_shipment_status: { label: "Shipment tracking", icon: "truck", c: "var(--t-ship)", data: "shipments and tracking events" },
+    check_inventory: { label: "Inventory", icon: "box", c: "var(--t-inv)", data: "stock at one warehouse" },
+    find_alternative_stock: { label: "Other warehouses", icon: "swap", c: "var(--t-alt)", data: "stock at other warehouses" },
+    get_carrier_alerts: { label: "Carrier alerts", icon: "alert", c: "var(--t-alert)", data: "carrier service alerts" },
+  };
+  const SCEN = {
+    S2: { cat: "delay", t: "Carrier-reported delay", d: "The carrier recorded a storm closure on the shipment. Can the agent confirm the cause and revised ETA?" },
+    D1: { cat: "delay", t: "Carrier hub disruption", d: "Tracking stalled at a hub with no reason given. Will the agent think to check carrier alerts?" },
+    D2: { cat: "delay", t: "Late warehouse dispatch", d: "The carrier is on time, but the warehouse shipped four days late. Does the agent spot it?" },
+    X3: { cat: "delay", t: "Stalled tracking", d: "Overdue, no scans for days, no explanation anywhere. The agent should say the cause is unknown." },
+    D3: { cat: "delay", t: "Shortage past promise", d: "Not shipped and already late because stock is short. Transfer and tell the customer." },
+    S1: { cat: "inventory", t: "Shortage, transfer possible", d: "Boston is short; exactly one warehouse can cover it. Does the agent pick the right one?" },
+    X1: { cat: "inventory", t: "Shortage, no single source", d: "No warehouse can cover the shortfall alone. The agent must not recommend a transfer." },
+    X2: { cat: "inventory", t: "Two items, one short", d: "One line is fine, the other isn't. The agent should check every item." },
+    S4: { cat: "edge", t: "Tracking system down", d: "The shipment tool fails (simulated). The agent must report this honestly, not guess." },
+    S3a: { cat: "edge", t: "Unknown order", d: "The order doesn't exist. No invented shipment, just ask to verify the ID." },
+    S3b: { cat: "edge", t: "Missing shipment record", d: "Marked shipped, but no shipment exists. The agent should flag the missing record." },
+    S5: { cat: "edge", t: "Shipped and on time", d: "Nothing is wrong. Does the agent avoid inventing a problem?" },
+    X4: { cat: "edge", t: "Pending and fine", d: "Enough stock and time. Another check that no problem is invented." },
+  };
+  const CAT = { delay: { label: "Shipment delay", c: "var(--t-ship)", icon: "truck" }, inventory: { label: "Inventory", c: "var(--t-inv)", icon: "box" }, edge: { label: "Edge case", c: "var(--model)", icon: "alert" } };
+
+  // ------------------------------------------------------------------ API
+  let meta = null, ordersData = null;
+  const headers = () => { const h = { "Content-Type": "application/json" }; const c = $("code").value || store.get("code"); if (c) h["X-Access-Code"] = c; return h; };
+  async function api(path, opts = {}) {
+    const r = await fetch(path, { ...opts, headers: headers() });
+    if (!r.ok) { let m = `HTTP ${r.status}`; try { m = (await r.json()).error || m; } catch {} throw new Error(m); }
+    return r;
+  }
+  const getJSON = async (p) => (await api(p)).json();
+
+  // ------------------------------------------------------------------ theme (dark by default)
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    put($("theme-btn"), icon(t === "dark" ? "sun" : "moon"));
+  }
+  $("theme-btn").addEventListener("click", () => { const n = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; store.set("theme", n, localStorage); applyTheme(n); toast(`${n === "dark" ? "Dark" : "Light"} theme`); });
+  applyTheme(store.get("theme", localStorage) || "dark");
+
+  // ------------------------------------------------------------------ tabs (click + arrow keys)
+  const TABS = ["investigate", "orders", "live", "eval", "how"];
+  function showTab(name, focus = false) {
+    document.querySelectorAll("nav.tabs button").forEach((b) => { const on = b.dataset.tab === name; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    for (const t of TABS) $(`tab-${t}`).classList.toggle("hidden", t !== name);
+    if (name === "orders") renderOrders();
+    if (name === "eval") loadEvaluation();
+    if (name === "live") { loadRecent(); if (R.status === "running" && $("autoscroll").checked) scrollLatest(); }
+    window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
+  }
+  document.querySelectorAll("nav.tabs button").forEach((b) => {
+    b.addEventListener("click", () => showTab(b.dataset.tab));
+    b.addEventListener("keydown", (e) => {
+      const i = TABS.indexOf(b.dataset.tab);
+      if (e.key === "ArrowRight") { e.preventDefault(); showTab(TABS[(i + 1) % TABS.length], true); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); showTab(TABS[(i - 1 + TABS.length) % TABS.length], true); }
+    });
+  });
+
+  // ------------------------------------------------------------------ startup
+  async function init() {
+    try { meta = await (await fetch("/api/meta", { headers: headers() })).json(); }
+    catch { toast("Could not reach the agent server.", "err"); return; }
+    if (meta.error || meta.access_code_required) {
+      $("code-row").classList.remove("hidden");
+      if (meta.error) { toast("This site needs an access code. Type it and press Enter.", "err"); return; }
+    }
+    put($("date-chip"), icon("clock"), el("span", { text: `Today: ${meta.investigation_date}` }));
+    $("st-max").textContent = meta.max_tool_calls;
+
+    for (const t of meta.tools) {
+      const T = TOOLS[t.name] || { label: t.name, icon: "info", c: "var(--accent)" };
+      const input = el("input", { type: "checkbox", value: t.name });
+      input.addEventListener("change", updateOutageCount);
+      $("fail-tools").append(el("label", { class: "switch", "data-tip": `Make ${t.name} return a simulated outage error` }, input,
+        el("span", { style: `color:${T.c};display:inline-flex` }, icon(T.icon)), el("span", { class: "mono", text: t.name })));
+      $("tool-list").append(el("div", { class: "how-item" }, el("b", { style: `color:${T.c}` }, icon(T.icon), el("span", { class: "mono", text: t.name })), el("p", { text: t.description })));
+    }
+    for (const [k, v] of Object.entries(meta.causes || {})) $("cause-list").append(el("div", { class: "how-item" }, el("b", { text: nice(k) }), el("p", { text: v })));
+    for (const [k, v] of Object.entries(meta.actions || {})) $("action-list").append(el("div", { class: "how-item" }, el("b", {}, el("span", { class: "mono", text: k })), el("p", { text: v })));
+    ["demo-controls", "ref-tools", "ref-causes", "ref-actions", "ref-verify"].forEach((id) => wireExp($(id)));
+    renderScenarios();
+    buildFlow();
+    buildFlashcards();
+    buildPaths();
+    try { ordersData = await getJSON("/api/data"); fillOrderSelect(); } catch (e) { toast(`Orders unavailable: ${e.message}`, "err"); }
+    loadRecent();
+  }
+  const updateCount = () => { $("count").textContent = $("request").value.length; };
+  $("request").addEventListener("input", updateCount);
+  $("code").addEventListener("keydown", (e) => { if (e.key === "Enter") { store.set("code", $("code").value); location.reload(); } });
+  function updateOutageCount() {
+    const n = document.querySelectorAll("#fail-tools input:checked").length;
+    $("outage-count").classList.toggle("hidden", !n); $("outage-count").textContent = `${n} outage${n > 1 ? "s" : ""} on`;
+  }
+
+  function fillOrderSelect() {
+    const sel = $("order-select");
+    for (const o of ordersData.orders) sel.append(el("option", { value: o.order_id, text: `${o.order_id} · ${o.customer_name} · ${nice(o.fulfillment_status)}` }));
+    sel.addEventListener("change", () => { if (sel.value) selectOrder(sel.value, false); });
+  }
+  function selectOrder(id, announce = true) {
+    $("order-select").value = id;
+    const cur = $("request").value;
+    $("request").value = /ORD-\d{4}/.test(cur) ? cur.replace(/ORD-\d{4}/g, id) : `Investigate order ${id}. Is anything wrong, and what should we do?`;
+    updateCount(); markScenario(null);
+    if (announce) toast(`${id} selected. Press Run investigation.`);
+  }
+
+  // ------------------------------------------------------------------ scenario cards
+  let scenFilter = "all", selectedScenario = null;
+  function renderScenarios() {
+    const grid = $("scenarios"); put(grid);
+    const order = ["D1", "S2", "D2", "X3", "D3", "S1", "X1", "X2", "S4", "S3b", "S3a", "S5", "X4"];
+    const byKey = Object.fromEntries(meta.examples.map((e) => [e.id.split("_")[0], e]));
+    for (const key of order) {
+      const ex = byKey[key], info = SCEN[key]; if (!ex || !info) continue;
+      if (scenFilter !== "all" && info.cat !== scenFilter) continue;
+      const C = CAT[info.cat], oid = (ex.request.match(/ORD-\d{4}/) || [""])[0];
+      const use = () => useScenario(ex, key);
+      const card = el("div", { class: `scen lift${selectedScenario === key ? " sel" : ""}`, style: `--c:${C.c}`, "data-key": key, onclick: (e) => { if (!e.target.closest("button")) use(); } },
+        el("div", { class: "row" }, el("span", { class: "cat" }, icon(C.icon), C.label), el("span", { class: "spacer" }), el("span", { class: "mono small muted", text: oid }),
+          ex.fail_tools.length ? el("span", { class: "pill bad", "data-tip": `Simulates a ${ex.fail_tools.join(", ")} outage` }, "outage") : null),
+        el("div", { class: "t", text: info.t }), el("div", { class: "d", text: info.d }), el("div", { class: "q", text: `“${ex.request}”` }),
+        el("div", { class: "row" }, el("button", { class: "btn sm", onclick: use, "aria-label": `Use scenario: ${info.t}` }, icon("arrow"), "Use scenario"),
+          el("button", { class: "btn sm ghost", "data-tip": "Load this scenario and start it immediately", onclick: () => { use(); run(); }, "aria-label": `Run scenario now: ${info.t}` }, icon("play"), "Run now")));
+      grid.append(card);
+    }
+  }
+  document.querySelectorAll("#scen-filter button").forEach((b) => b.addEventListener("click", () => {
+    scenFilter = b.dataset.f; document.querySelectorAll("#scen-filter button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); renderScenarios();
+  }));
+  function markScenario(key) { selectedScenario = key; document.querySelectorAll(".scen").forEach((c) => c.classList.toggle("sel", c.dataset.key === key)); }
+  function useScenario(ex, key) {
+    $("request").value = ex.request; updateCount();
+    const oid = (ex.request.match(/ORD-\d{4}/) || [""])[0]; $("order-select").value = [...$("order-select").options].some((o) => o.value === oid) ? oid : "";
+    document.querySelectorAll("#fail-tools input").forEach((i) => { i.checked = ex.fail_tools.includes(i.value); }); updateOutageCount();
+    if (ex.fail_tools.length && !$("demo-controls").classList.contains("open")) $("demo-controls").querySelector(".exp-h").click();
+    markScenario(key);
+    if (matchMedia("(max-width: 1020px)").matches) $("request").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" });
+    toast(ex.fail_tools.length ? `Scenario loaded, with a simulated ${ex.fail_tools.join(", ")} outage` : "Scenario loaded. Press Run investigation.");
+  }
+
+  // ------------------------------------------------------------------ run state (one run at a time, survives tab switches)
+  const R = { status: "idle", replay: false, request: "", failTools: [], steps: [], cards: {}, calls: 0, t0: 0, tEnd: 0, report: null, verification: null, traceId: null, lastEvent: "", path: [], error: null };
+  let timer = null;
+
+  // decision map ---------------------------------------------------------------
+  const NODES = [
+    { id: "request", label: "Request", icon: "msg", c: "var(--accent)" },
+    ...Object.entries(TOOLS).map(([id, t]) => ({ id, label: t.label, icon: t.icon, c: t.c })),
+    { id: "report", label: "Report", icon: "report", c: "var(--model)" },
+    { id: "verify", label: "Verified", icon: "shield", c: "var(--ok)" },
+  ];
+  const flowCount = {};
+  function buildFlow() {
+    const f = $("flow"); put(f);
+    NODES.forEach((n, i) => {
+      if (i) f.append(el("div", { class: "link", id: `lk-${n.id}` }));
+      f.append(el("div", { class: "node", id: `nd-${n.id}`, style: `--c:${n.c}`, title: n.label },
+        el("div", { class: "bubble" }, icon(n.icon), el("span", { class: "cnt", text: "0" })), el("div", { class: "nlbl", text: n.label })));
+      flowCount[n.id] = 0;
+    });
+  }
+  function nodeState(id, state) {
+    const n = $(`nd-${id}`); if (!n) return;
+    n.classList.remove("active");
+    if (state === "active") { n.classList.add("active"); return; }
+    if (["used", "error", "missing"].includes(state)) { flowCount[id]++; n.classList.add("used"); n.querySelector(".cnt").textContent = flowCount[id]; }
+    if (state === "error") n.classList.add("error");
+    if (state === "missing") n.classList.add("missing");
+    if (state === "done") n.classList.add("done");
+    if (state === "failv") n.classList.add("failv");
+    $(`lk-${id}`)?.classList.add("lit");
+  }
+
+  // timeline cards ---------------------------------------------------------------
+  const timeline = $("timeline");
+  function evCard({ cls = "", c = null, iconName, title, badges = [], summary = [], metaText = "", body = null, open = false }) {
+    const head = el(body ? "button" : "div", { class: "ev-h", "aria-expanded": body ? String(open) : null },
+      el("span", { class: "ev-ic" }, icon(iconName)),
+      el("span", { class: "ev-main" }, el("span", { class: "ev-t" }, title, badges), summary.length ? el("span", { class: "ev-s" }, summary) : null),
+      el("span", { class: "ev-meta", text: metaText }), body ? icon("chev", "i chev") : null);
+    const card = el("article", { class: `ev ${cls}${open ? " open" : ""}`, style: c ? `--c:${c}` : null }, head,
+      body ? el("div", { class: "ev-b" }, el("div", {}, el("div", { class: "pad" }, body))) : null);
+    if (body) head.addEventListener("click", () => { const o = !card.classList.contains("open"); card.classList.toggle("open", o); head.setAttribute("aria-expanded", String(o)); });
+    return card;
+  }
+  function relTime() { return R.replay ? "" : `+${((performance.now() - R.t0) / 1000).toFixed(1)}s`; }
+  function addEv(card) { timeline.append(card); if ($("autoscroll").checked && !$("tab-live").classList.contains("hidden")) scrollLatest(); }
+  function scrollLatest() { const last = timeline.lastElementChild; if (last) last.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); }
+
+  function summarize(name, res) {
+    if (!res.ok) return [`${res.error.code}: ${res.error.message}`];
+    const d = res.data;
+    if (name === "get_order_details") return [`${d.order_id} for ${d.customer_name}: ${nice(d.fulfillment_status)}`,
+      `Warehouse ${d.fulfillment_warehouse_id} · ship-by ${d.ship_by_date} · promised ${d.promised_delivery_date}` + (d.is_past_promised_date ? " (passed)" : ""),
+      "Items: " + d.items.map((i) => `${i.sku} × ${i.quantity}`).join(", ")];
+    if (name === "get_shipment_status") return d.shipments.flatMap((s) => [
+      `${s.shipment_id} via ${s.carrier}: ${s.status}` + (s.is_overdue ? `, ${s.days_past_promised_date} days past promise` : ""),
+      `ETA ${s.current_estimated_delivery_date ?? "none given"} · delay reason: ${s.recorded_delay_reason ?? "none recorded"}`,
+      `Dispatched ${s.dispatch_date} (ship-by ${s.ship_by_date}${s.dispatched_late ? `, ${s.dispatch_days_after_ship_by} days late` : ", on time"}) · last scan ${s.last_event_date ?? "none"} at ${s.last_event_location ?? "?"}`]);
+    if (name === "check_inventory") return [`${d.sku} at ${d.warehouse_id}: ${d.available} available (on hand ${d.on_hand}, reserved ${d.reserved})`];
+    if (name === "find_alternative_stock") return [`Need ${d.required_quantity} × ${d.sku}` + (d.excluded_warehouse_id ? ` (excluding ${d.excluded_warehouse_id})` : ""),
+      "Can cover alone: " + (d.warehouses_with_sufficient_stock.join(", ") || "none"), d.warehouses_checked.map((w) => `${w.warehouse_id} ${w.available}`).join(" · ")];
+    if (name === "get_carrier_alerts") return d.alerts.length
+      ? d.alerts.map((a) => `${a.alert_id} ${nice(a.alert_type)} at ${a.location}, ${a.start_date} → ${a.end_date}` + (a.active_on_investigation_date ? " (active)" : " (ended)"))
+      : [`No alerts for ${d.carrier}` + (d.location_filter ? ` at ${d.location_filter}` : "")];
+    return [];
+  }
+  const toolState = (res) => res.ok ? ["s-ok", "ok", "Succeeded"] : res.error.code === "NOT_FOUND" ? ["s-missing", "warn", "Missing information"] : ["s-fail", "bad", res.error.code === "TOOL_FAILURE" ? "Failed" : "Rejected"];
+
+  function onStep(s) {
+    R.steps.push(s); $("st-step").textContent = R.steps.length;
+    if (s.type === "model_turn") {
+      const reqs = s.tool_requests || [];
+      const calls = reqs.filter((r) => r.name !== "submit_report");
+      // The model's visible text, exactly as returned. No private reasoning is shown or invented.
+      addEv(evCard({ cls: "model", iconName: "brain", title: "Model decision", badges: [pill("model", calls.length ? `requests ${calls.map((r) => TOOLS[r.name]?.label || r.name).join(", ")}` : reqs.length ? "submits report" : "no tool call")],
+        summary: [s.text ? el("span", { text: s.text }) : el("span", { class: "muted", text: "(no stated reason)" })], metaText: relTime(),
+        body: el("div", {}, el("div", { class: "k-lbl", text: "Requested calls" }), el("pre", { text: reqs.length ? reqs.map((r) => `${r.name}(${r.name === "submit_report" ? "…report…" : fmtArgs(r.arguments)})`).join("\n") : "none" }),
+          el("div", { class: "small muted", style: "margin-top:6px", text: "Shown text is the model's visible output for this turn." })) }));
+      for (const r of calls) {
+        nodeState(r.name, "active");
+        const T = TOOLS[r.name] || { label: r.name, icon: "code", c: "var(--accent)" };
+        const card = evCard({ cls: "s-running", c: T.c, iconName: T.icon, title: T.label, badges: [pill("run", "Running")], summary: [el("span", { class: "muted", text: "Requested by the model; waiting for Python to validate and run it." })], metaText: relTime() });
+        R.cards[r.id] = card; addEv(card);
+      }
+      if (reqs.some((r) => r.name === "submit_report")) nodeState("report", "active");
+      R.lastEvent = calls.length ? `Model requested ${calls.map((r) => TOOLS[r.name]?.label || r.name).join(", ")}` : reqs.length ? "Model submitted its report" : "Model replied without a tool call";
+    } else if (s.type === "tool_execution") {
+      const T = TOOLS[s.name] || { label: s.name, icon: "code", c: "var(--accent)" };
+      const [cls, pc, label] = toolState(s.result);
+      R.calls++; $("st-calls").textContent = R.calls;
+      nodeState(s.name, s.result.ok ? "used" : cls === "s-missing" ? "missing" : "error");
+      R.path.push({ name: s.name, cls }); renderPath();
+      const card = evCard({ cls, c: T.c, iconName: T.icon, title: T.label, badges: [pill(pc, label)],
+        summary: [el("ul", {}, summarize(s.name, s.result).map((t) => el("li", { text: t })))], metaText: `${s.meta.duration_ms} ms${R.replay ? "" : " · " + relTime()}`,
+        body: el("div", {}, el("div", { class: "k-lbl", text: "Python function" }), el("pre", { text: s.meta.python_function || "(not executed: rejected by validation)" }),
+          el("div", { class: "k-lbl", text: "Arguments from the model" }), el("pre", { text: JSON.stringify(s.arguments, null, 2) }),
+          el("div", { class: "k-lbl", text: "Returned to the model" }), el("pre", { text: JSON.stringify(s.result, null, 2) })) });
+      const pending = R.cards[s.tool_call_id];
+      if (pending) { pending.replaceWith(card); delete R.cards[s.tool_call_id]; } else addEv(card);
+      R.lastEvent = `Python ran ${T.label}: ${label.toLowerCase()}`;
+    } else if (s.type === "report_rejected") {
+      addEv(evCard({ cls: "s-warn", iconName: "alert", title: "Report rejected by Python", badges: [pill("warn", "sent back")], summary: [s.problems.join("; ")], metaText: relTime() }));
+      R.lastEvent = "Python rejected the report format; the model is fixing it";
+    } else if (s.type === "limit_reached") {
+      addEv(evCard({ cls: "s-warn", iconName: "alert", title: "Tool-call limit reached", summary: [`Limit of ${s.limit} calls; ${s.tool} was refused.`], metaText: relTime() }));
+    } else if (s.type === "nudge" || s.type === "stopped") {
+      addEv(evCard({ cls: s.type === "stopped" ? "s-fail" : "s-warn", iconName: "alert", title: s.type === "nudge" ? "Reminder sent to the model" : "Run stopped", summary: [s.message || s.reason], metaText: relTime() }));
+      R.lastEvent = s.message || s.reason;
+    } else if (s.type === "final_report") {
+      nodeState("report", "done");
+      addEv(evCard({ cls: "s-ok", c: "var(--model)", iconName: "report", title: "Final report submitted", badges: [pill("model", nice(s.report.issue_type))],
+        summary: [s.report.summary], metaText: relTime(), body: el("pre", { text: JSON.stringify(s.report, null, 2) }) }));
+      R.lastEvent = "Report submitted; Python is verifying it";
+    }
+    renderProgress(); renderRunSummary();
+  }
+  function renderPath() {
+    put($("path"), el("span", { class: "muted small", text: "Path chosen by the model:" }),
+      R.path.map((p, i) => [i ? icon("chev") : null, el("span", { class: "p", style: `color:${p.cls === "s-ok" ? TOOLS[p.name]?.c : p.cls === "s-missing" ? "var(--warn)" : "var(--bad)"}` }, TOOLS[p.name]?.label || p.name, p.cls === "s-ok" ? null : p.cls === "s-missing" ? " (missing)" : " ✗")]));
+  }
+  function setExpanded(open) { timeline.querySelectorAll(".ev").forEach((c) => { const h = c.querySelector(".ev-h"); if (c.querySelector(".ev-b")) { c.classList.toggle("open", open); h.setAttribute("aria-expanded", String(open)); } }); }
+  $("exp-all").addEventListener("click", () => { setExpanded(true); toast("All cards expanded"); });
+  $("col-all").addEventListener("click", () => setExpanded(false));
+
+  // progress (Investigate) + summary (Live) -----------------------------------------
+  const elapsed = () => R.t0 ? (((R.tEnd || performance.now()) - R.t0) / 1000).toFixed(1) + "s" : "—";
+  function setLiveDot() {
+    const d = $("live-dot"); d.className = "live-dot" + (R.status === "running" ? " on" : R.status === "done" ? (R.verification?.overall === "FAIL" ? " fail" : " done") : R.status === "error" ? " fail" : "");
+    $("live-dot-sr").textContent = R.status === "running" ? "(investigation running)" : R.status === "done" ? "(investigation finished)" : "";
+  }
+  function renderProgress() {
+    const p = $("progress");
+    if (R.status === "idle") { p.classList.add("hidden"); return; }
+    p.classList.remove("hidden"); p.classList.toggle("running", R.status === "running");
+    const state = R.status === "running" ? el("div", { class: "prog-state" }, el("span", { class: "spinner" }))
+      : el("div", { class: `prog-state ${R.status === "error" || R.verification?.overall === "FAIL" ? "bad" : "ok"}` }, icon(R.status === "error" ? "alert" : "check"));
+    const title = R.status === "running" ? (R.replay ? "Replaying a saved run…" : "Investigating…") : R.status === "error" ? "Investigation failed" : (R.replay ? "Replay finished" : "Investigation finished");
+    put(p, el("div", { class: "prog-row" }, state,
+      el("div", { style: "flex:1;min-width:200px" }, el("div", { class: "display", style: "font-weight:600;font-size:16px", text: title }),
+        el("div", { class: "small muted", style: "overflow-wrap:anywhere", text: R.status === "error" ? R.error : (R.lastEvent || "Waiting for the model's first decision") })),
+      el("div", { class: "stats" }, el("span", {}, "Events ", el("b", { text: R.steps.length })), el("span", {}, "Tool calls ", el("b", { text: R.calls })), el("span", {}, "Elapsed ", el("b", { id: "pg-time", text: elapsed() }))),
+      el("button", { class: "btn", onclick: () => showTab("live") }, icon("eye"), R.status === "running" ? "View live investigation" : "View execution trace")),
+      R.replay ? el("div", { class: "banner", style: "margin-top:12px" }, icon("replay"), "Replay of a recorded run: no model call, no cost.") : null,
+      R.failTools.length ? el("div", { class: "banner warnb", style: "margin-top:10px" }, icon("sliders"), `Demo control active: simulated ${R.failTools.join(", ")} outage.`) : null);
+  }
+  function renderRunSummary() {
+    const s = $("run-summary");
+    if (R.status === "idle") return;
+    const st = R.status === "running" ? pill("run", "running") : R.status === "error" ? pill("bad", "error") : pill(R.verification?.overall === "FAIL" ? "bad" : "ok", R.verification?.overall === "FAIL" ? "verification failed" : "verified");
+    put(s, el("div", { class: "row" }, el("h2", { text: "This run" }), el("span", { class: "spacer" }), st),
+      el("div", { class: "small", style: "margin-top:10px;color:var(--ink-2);overflow-wrap:anywhere", text: `“${R.request}”` }),
+      R.replay ? el("div", { class: "banner", style: "margin-top:10px" }, icon("replay"), "Replay: recorded events, no model call.") : null,
+      R.failTools.length ? el("div", { class: "banner warnb", style: "margin-top:10px" }, icon("sliders"), `Simulated outage: ${R.failTools.join(", ")}`) : null,
+      el("div", { class: "kv" }, el("div", {}, el("div", { class: "k", text: "Events" }), el("div", { class: "v", text: R.steps.length })),
+        el("div", {}, el("div", { class: "k", text: "Elapsed" }), el("div", { class: "v", id: "rs-time", text: elapsed() }))),
+      R.status === "done" ? el("button", { class: "btn block", style: "margin-top:12px", onclick: () => { showTab("investigate"); setTimeout(() => $("results").scrollIntoView({ behavior: reduced() ? "auto" : "smooth" }), 50); } }, icon("report"), "Read the final report") : null);
+  }
+  function tick() {
+    const t = elapsed(); $("st-time").textContent = t;
+    const a = $("pg-time"); if (a) a.textContent = t; const b = $("rs-time"); if (b) b.textContent = t;
+  }
+
+  // results ---------------------------------------------------------------
+  const ISSUE = {
+    DELAYED_DELIVERY: { t: "Delayed delivery", sev: "warn", icon: "clock" }, INSUFFICIENT_INVENTORY: { t: "Insufficient inventory", sev: "warn", icon: "box" },
+    NO_EXCEPTION: { t: "No problem found", sev: "ok", icon: "check" }, ORDER_NOT_FOUND: { t: "Order not found", sev: "info", icon: "search" },
+    MISSING_DATA: { t: "Missing data", sev: "info", icon: "db" }, INCONCLUSIVE: { t: "Inconclusive", sev: "info", icon: "info" },
+  };
+  function groupEvidence(items) {
+    const groups = {};
+    for (const text of items || []) {
+      const m = text.match(/^\s*([a-z_]+)\s*:\s*(.*)$/s);
+      const key = m && TOOLS[m[1]] ? m[1] : "other";
+      (groups[key] ||= []).push(m && TOOLS[m[1]] ? m[2] : text);
+    }
+    return groups;
+  }
+  function renderReport(r) {
+    const I = ISSUE[r.issue_type] || { t: r.issue_type, sev: "info", icon: "info" };
+    const groups = groupEvidence(r.evidence);
+    const list = (items) => items?.length ? el("ul", { class: "plain" }, items.map((t) => el("li", { text: t }))) : el("div", { class: "small muted", text: "None" });
+    put($("report-card"),
+      r.generated_by === "system" ? el("div", { class: "banner badb", style: "margin-bottom:12px" }, icon("alert"), "Written by Python, not the model: the model did not submit a report.") : null,
+      el("div", { class: "issue-hero" }, el("div", { class: `issue-icon sev-${I.sev}` }, icon(I.icon)),
+        el("div", { style: "min-width:0" }, el("div", { class: "row" }, el("span", { class: "issue-title", text: I.t }),
+          el("span", { class: `pill ${r.investigation_complete ? "ok" : "warn"}`, "data-tip": r.investigation_complete ? "The agent had enough evidence for a conclusion" : "A tool failed or data was missing, so the conclusion isn't reliable" }, r.investigation_complete ? "conclusive" : "incomplete")),
+          el("p", { class: "summary-text", text: r.summary }))),
+      el("div", { class: "kv" },
+        el("div", {}, el("div", { class: "k", text: "Order" }), el("div", { class: "v mono", text: r.order_id })),
+        el("div", {}, el("div", { class: "k", text: "Cause" }), el("div", { class: "v", text: nice(r.cause_category) }), el("div", { class: "small muted", text: r.cause_status })),
+        el("div", {}, el("div", { class: "k", text: "Transfer from" }), el("div", { class: "v mono", text: r.recommended_source_warehouse || "—" }))),
+      el("h3", { text: "Likely cause" }), el("div", { class: "small", style: "color:var(--ink-2)", text: r.likely_cause }),
+      el("h3", { text: "Recommended actions" }),
+      el("div", { class: "actions" }, (r.recommended_actions || []).map((a, i) => el("div", { class: "action" }, el("div", { class: "num", text: i + 1 }),
+        el("div", { style: "min-width:0" }, el("div", { class: "name", text: nice(a.action) }), el("div", { class: "det", text: a.details }))))),
+      el("h3", { text: `Evidence the model cited (${(r.evidence || []).length})` }),
+      Object.entries(groups).map(([k, items], i) => expBlock(k === "other" ? "Other notes" : TOOLS[k].label,
+        el("ul", { class: "ev" }, items.map((t) => el("li", { style: `--c:${TOOLS[k]?.c || "var(--line-2)"}`, text: t }))),
+        { open: i === 0, extra: el("span", { class: "pill skip", text: items.length }) })),
+      el("h3", { text: "Limitations" }),
+      expBlock(`Uncertainties (${(r.uncertainties || []).length})`, list(r.uncertainties), { iconName: "info" }),
+      expBlock(`Missing information (${(r.missing_information || []).length})`, list(r.missing_information), { iconName: "db", open: !!(r.missing_information || []).length }),
+      el("div", { class: "row", style: "margin-top:16px" },
+        el("button", { class: "btn", onclick: copyReport, "data-tip": "Copy the full report as Markdown" }, icon("copy"), "Copy report"),
+        el("button", { class: "btn", onclick: () => download("md"), "data-tip": "Save the report as a Markdown file" }, icon("download"), "Report (.md)"),
+        el("button", { class: "btn", onclick: () => download("json"), "data-tip": "Save every event, the report and the verification as JSON" }, icon("download"), "Execution trace (.json)"),
+        el("button", { class: "btn ghost", onclick: () => showTab("live") }, icon("eye"), "View trace")));
+  }
+  function ring(passed, total, color) {
+    const Rr = 38, C = 2 * Math.PI * Rr, frac = total ? passed / total : 0;
+    const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 92 92"); svg.setAttribute("class", "ring"); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `${passed} of ${total} checks passed`);
+    const mk = (cls, extra = {}) => { const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", 46); c.setAttribute("cy", 46); c.setAttribute("r", Rr); c.setAttribute("class", cls); for (const [k, v] of Object.entries(extra)) c.setAttribute(k, v); return c; };
+    const fg = mk("fg", { stroke: color, "stroke-dasharray": C, "stroke-dashoffset": C });
+    const tx = document.createElementNS(NS, "text"); tx.setAttribute("x", 46); tx.setAttribute("y", 49); tx.setAttribute("text-anchor", "middle"); tx.textContent = `${passed}/${total}`;
+    const st = document.createElementNS(NS, "text"); st.setAttribute("x", 46); st.setAttribute("y", 64); st.setAttribute("text-anchor", "middle"); st.setAttribute("class", "sub"); st.textContent = "checks";
+    svg.append(mk("bg"), fg, tx, st);
+    requestAnimationFrame(() => requestAnimationFrame(() => fg.setAttribute("stroke-dashoffset", C * (1 - frac))));
+    return svg;
+  }
+  function renderVerification(v) {
+    const scored = v.checks.filter((c) => c.status !== "skip"), passed = scored.filter((c) => c.status === "pass").length;
+    const ord = { fail: 0, warn: 1, pass: 2, skip: 3 }, sorted = [...v.checks].sort((a, b) => ord[a.status] - ord[b.status]);
+    const problems = sorted.filter((c) => c.status === "fail" || c.status === "warn"), rest = sorted.filter((c) => c.status === "pass" || c.status === "skip");
+    const li = (c) => el("li", {}, el("div", {}, pill(c.status, c.status.toUpperCase())), el("div", {}, el("div", { class: "cn", text: nice(c.name) }), el("div", { class: "cd", text: c.detail })));
+    put($("verify-card"), el("div", { class: "card-head" }, el("h2", {}, icon("shield"), "Evidence verification")),
+      el("div", { class: "ring-wrap" }, ring(passed, scored.length, v.overall === "PASS" ? "var(--ok)" : "var(--bad)"),
+        el("div", {}, el("div", { class: `verdict ${v.overall}`, text: v.overall === "PASS" ? "Verified" : "Problems found" }),
+          el("div", { class: "small muted", text: "Computed by Python from the tool results and the database, not by the model." }))),
+      problems.length ? el("ul", { class: "checks", style: "margin-top:12px" }, problems.map(li)) : null,
+      el("div", { style: "margin-top:12px" }, expBlock(`${problems.length ? "Other" : "All"} checks (${rest.length})`, el("ul", { class: "checks" }, rest.map(li)), { open: !problems.length })));
+  }
+  function renderCompare(r, ref) {
+    const card = $("compare-card");
+    if (!ref) { put(card, el("h2", { text: "Model vs. database" }), el("div", { class: "small muted", text: "No database reference for this request." })); return; }
+    const acts = (r.recommended_actions || []).map((a) => a.action), exp = ref.expected_actions || { required_any_of: [], allowed: [] };
+    const yes = (b) => el("span", { class: b ? "yes" : "no", text: b ? "✓" : "✗", "aria-label": b ? "matches" : "does not match" });
+    const rows = [["Problem", nice(r.issue_type), (ref.acceptable_issue_types || []).map(nice).join(" / "), (ref.acceptable_issue_types || []).includes(r.issue_type)],
+      ["Cause", nice(r.cause_category), (ref.acceptable_causes || []).map(nice).join(" / "), (ref.acceptable_causes || []).includes(r.cause_category)],
+      ...exp.required_any_of.map((g) => ["Required action", acts.filter((a) => g.includes(a)).map(nice).join(", ") || "—", g.map(nice).join(" or "), acts.some((a) => g.includes(a))])];
+    const extra = acts.filter((a) => !exp.allowed.includes(a));
+    if (extra.length) rows.push(["Unexpected actions", extra.map(nice).join(", "), "not expected for this case", false]);
+    const viable = Object.values(ref.viable_sources || {}).flat();
+    if (viable.length || r.recommended_source_warehouse) rows.push(["Transfer source", r.recommended_source_warehouse || "—", viable.join(" / ") || "none possible", r.recommended_source_warehouse ? viable.includes(r.recommended_source_warehouse) : !viable.length]);
+    put(card, el("div", { class: "card-head" }, el("h2", {}, icon("db"), "Model vs. database"), el("span", { class: "spacer" }), r.investigation_complete ? null : pill("warn", "report marked incomplete")),
+      el("div", { class: "small muted", style: "margin:-6px 0 8px", text: "The database answer comes from independent SQL rules, not from the model." }),
+      el("table", { class: "cmp" }, el("thead", {}, el("tr", {}, ["", "Agent said", "Database says", ""].map((h) => el("th", { text: h })))),
+        el("tbody", {}, rows.map(([k, a, b, ok]) => el("tr", {}, el("td", { class: "small muted", text: k }), el("td", { text: a }), el("td", { text: b }), el("td", {}, yes(ok)))))));
+  }
+
+  // exports ---------------------------------------------------------------
+  function reportMarkdown(r, v) {
+    const b = (xs) => (xs?.length ? xs.map((x) => `- ${x}`).join("\n") : "- (none)");
+    return [`# Investigation report: ${r.order_id}`, "", `**Request:** ${R.request}  `, `**Issue:** ${nice(r.issue_type)} (${r.investigation_complete ? "conclusive" : "incomplete"})  `,
+      `**Cause:** ${nice(r.cause_category)} (${r.cause_status})  `, `**Verification:** ${v.overall}`, "", r.summary, "",
+      "## Recommended actions", ...(r.recommended_actions || []).map((a, i) => `${i + 1}. **${nice(a.action)}**: ${a.details}`), "",
+      "## Evidence", b(r.evidence), "", "## Likely cause", r.likely_cause, "", "## Uncertainties", b(r.uncertainties), "", "## Missing information", b(r.missing_information), "",
+      "## Verification checks", ...v.checks.map((c) => `- ${c.status.toUpperCase()} \`${c.name}\`: ${c.detail}`), ""].join("\n");
+  }
+  function download(kind) {
+    if (!R.report) { toast("No finished report to download yet.", "err"); return; }
+    const body = kind === "md" ? reportMarkdown(R.report, R.verification)
+      : JSON.stringify({ request: R.request, replay: R.replay, simulated_failing_tools: R.failTools, steps: R.steps, final_report: R.report, verification: R.verification }, null, 2);
+    const a = el("a", { href: URL.createObjectURL(new Blob([body], { type: kind === "md" ? "text/markdown" : "application/json" })), download: `${R.report.order_id || "report"}-${kind === "md" ? "report.md" : "trace.json"}` });
+    document.body.append(a); a.click(); a.remove(); toast(kind === "md" ? "Report downloaded" : "Execution trace downloaded");
+  }
+  async function copyReport() {
+    if (!R.report) return;
+    const text = reportMarkdown(R.report, R.verification);
+    try { await navigator.clipboard.writeText(text); toast("Report copied as Markdown"); return; } catch { /* fall back below */ }
+    // Fallback for browsers or embedded views that block the async clipboard API.
+    const ta = el("textarea", { style: "position:fixed;left:-9999px;top:0", "aria-hidden": "true" }); ta.value = text; document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch { ok = false; }
+    ta.remove();
+    toast(ok ? "Report copied as Markdown" : "Copy isn't available in this browser. Use Report (.md) instead.", ok ? "ok" : "err");
+  }
+
+  // run / replay ---------------------------------------------------------------
+  function beginRun(request, failTools, replay) {
+    Object.assign(R, { status: "running", replay, request, failTools, steps: [], cards: {}, calls: 0, t0: performance.now(), tEnd: 0, report: null, verification: null, traceId: null, lastEvent: "", path: [], error: null });
+    buildFlow(); nodeState("request", "done");
+    $("st-step").textContent = 0; $("st-calls").textContent = 0;
+    put($("path"), el("span", { class: "muted small", text: "Tools light up only when the model actually calls them." }));
+    put($("live-banner"), replay ? el("div", { class: "banner", style: "margin-bottom:12px" }, icon("replay"), "Replaying a recorded run: these are the saved real events, shown again. No model call, no cost.") : null);
+    put(timeline, evCard({ cls: "req", iconName: "msg", title: "Request", summary: [request], badges: failTools.length ? [pill("bad", `outage: ${failTools.join(", ")}`)] : [], metaText: replay ? "" : "+0.0s" }));
+    $("results").classList.add("hidden");
+    clearInterval(timer); timer = setInterval(tick, 100);
+    setLiveDot(); setBusy(true, replay ? "Replaying…" : "Investigating…"); renderProgress(); renderRunSummary();
+  }
+  function endRun(status, error = null) {
+    R.status = status; R.error = error; R.tEnd = performance.now(); clearInterval(timer); tick();
+    Object.values(R.cards).forEach((c) => { c.classList.remove("s-running"); const b = c.querySelector(".pill.run"); if (b) { b.className = "pill skip"; b.textContent = "no result received"; } });
+    setLiveDot(); setBusy(false); renderProgress(); renderRunSummary();
+  }
+  function showResults(report, verification, traceId) {
+    R.report = report; R.verification = verification; R.traceId = traceId;
+    nodeState("verify", verification.overall === "PASS" ? "done" : "failv");
+    const scored = verification.checks.filter((c) => c.status !== "skip");
+    addEv(evCard({ cls: verification.overall === "PASS" ? "s-ok" : "s-fail", c: "var(--ok)", iconName: "shield", title: "Verification by Python",
+      badges: [pill(verification.overall === "PASS" ? "ok" : "bad", verification.overall)], summary: [`${scored.filter((c) => c.status === "pass").length}/${scored.length} checks passed`],
+      body: el("ul", { class: "checks" }, verification.checks.map((c) => el("li", {}, el("div", {}, pill(c.status, c.status.toUpperCase())), el("div", {}, el("div", { class: "cn", text: nice(c.name) }), el("div", { class: "cd", text: c.detail }))))) }));
+    renderReport(report); renderVerification(verification); renderCompare(report, verification.reference);
+    $("results").classList.remove("hidden");
+    const passedN = scored.filter((c) => c.status === "pass").length, warnN = scored.filter((c) => c.status === "warn").length;
+    R.lastEvent = `${nice(report.issue_type)} · ${verification.overall === "PASS" ? "verified" : "verification found problems"}: ${passedN} of ${scored.length} checks passed${warnN ? `, ${warnN} warning${warnN > 1 ? "s" : ""}` : ""}`;
+    endRun("done");
+    if (!$("tab-investigate").classList.contains("hidden")) setTimeout(() => $("progress").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }), 120);
+    toast(verification.overall === "PASS" ? "Investigation finished and verified" : "Investigation finished; verification found problems", verification.overall === "PASS" ? "ok" : "err");
+  }
+  function setBusy(b, label) {
+    $("run").disabled = b;
+    put($("run"), icon(b ? "clock" : "play"), el("span", { text: b ? label : "Run investigation" }), b ? null : el("kbd", { text: "Ctrl/⌘ Enter" }));
+  }
+  async function run() {
+    if (R.status === "running") { toast("An investigation is already running.", "err"); return; }
+    const text = $("request").value.trim();
+    if (!text) { $("request").focus(); toast("Type a question, choose an order, or pick a scenario first.", "err"); return; }
+    const failTools = [...document.querySelectorAll("#fail-tools input:checked")].map((i) => i.value);
+    beginRun(text, failTools, false);
+    try {
+      const r = await api("/api/investigate", { method: "POST", body: JSON.stringify({ request: text, fail_tools: failTools }) });
+      const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "", finished = false;
+      for (;;) {
+        const { value, done } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true }); let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue;
+          const ev = JSON.parse(line);
+          if (ev.event === "step") onStep(ev.step);
+          else if (ev.event === "done") { finished = true; showResults(ev.report, ev.verification, ev.trace_id); loadRecent(); }
+          else if (ev.event === "error") { finished = true; endRun("error", ev.message); toast(ev.message, "err"); }
+        }
+      }
+      if (!finished && R.status === "running") { endRun("error", "The connection closed before the run finished."); toast("Connection closed before the run finished.", "err"); }
+    } catch (e) { endRun("error", e.message); toast(e.message, "err"); }
+  }
+  async function replay(id) {
+    if (R.status === "running") { toast("Wait for the current run to finish.", "err"); return; }
+    let t; try { t = await getJSON(`/api/trace?id=${encodeURIComponent(id)}`); } catch (e) { toast(e.message, "err"); return; }
+    const fails = Array.isArray(t.meta?.simulated_failing_tools) ? t.meta.simulated_failing_tools : [];
+    beginRun(t.request, fails, true); showTab("live");
+    for (const s of t.steps || []) { onStep(s); await sleep(s.type === "model_turn" ? 650 : 420); }
+    if (t.final_report && t.verification) showResults(t.final_report, t.verification, id);
+    else { endRun("error", "This saved run has no final report."); toast("This saved run has no final report.", "err"); }
+  }
+  $("run").addEventListener("click", run);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !$("tab-investigate").classList.contains("hidden")) { e.preventDefault(); run(); }
+    if (e.key === "Escape") closeDrawer();
+  });
+  async function loadRecent() {
+    try {
+      const { runs } = await getJSON("/api/history"); const ul = $("recent"); put(ul);
+      if (!runs.length) { ul.append(el("li", { class: "muted", text: "No saved runs yet." })); return; }
+      for (const r of runs.slice(0, 10)) ul.append(el("li", {}, el("span", { class: `status-dot ${r.overall || "none"}`, title: r.overall || "no verification" }),
+        el("div", { class: "r-main" }, el("div", {}, el("b", { class: "mono", text: r.order_id || "?" }), " · ", nice(r.issue_type)), el("div", { class: "small muted", text: r.scenario ? `scenario ${r.scenario}` : (r.request || "") })),
+        el("button", { class: "btn sm", "aria-label": `Replay run for ${r.order_id}`, "data-tip": "Replay these recorded events", onclick: () => replay(r.id) }, icon("replay"), "Replay")));
+    } catch { put($("recent"), el("li", { class: "muted", text: "Saved runs unavailable." })); }
+  }
+
+  // orders ---------------------------------------------------------------
+  let oFilter = "all";
+  function renderOrders() {
+    if (!ordersData) return;
+    const q = $("o-search").value.trim().toLowerCase(), today = meta?.investigation_date || "";
+    const ships = Object.fromEntries((ordersData.shipments || []).map((s) => [s.order_id, s]));
+    const list = ordersData.orders.filter((o) => {
+      const late = o.fulfillment_status !== "DELIVERED" && o.promised_delivery_date < today;
+      if (oFilter === "late" ? !late : oFilter !== "all" && o.fulfillment_status !== oFilter) return false;
+      return !q || JSON.stringify(o).toLowerCase().includes(q) || (ships[o.order_id] && JSON.stringify(ships[o.order_id]).toLowerCase().includes(q));
+    });
+    $("o-count").textContent = `${list.length} of ${ordersData.orders.length} orders`;
+    const g = $("o-grid"); put(g);
+    if (!list.length) { g.append(el("div", { class: "empty" }, el("div", { class: "big" }, icon("search")), "No orders match.", el("div", { class: "small", text: "Try another search or filter." }))); return; }
+    const stCls = { PENDING_FULFILLMENT: "warn", SHIPPED: "info", DELIVERED: "ok" };
+    for (const o of list) {
+      const late = o.fulfillment_status !== "DELIVERED" && o.promised_delivery_date < today, s = ships[o.order_id];
+      g.append(el("div", { class: "ocard lift" },
+        el("div", { class: "row" }, el("span", { class: "oid", text: o.order_id }), el("span", { class: "spacer" }), pill(stCls[o.fulfillment_status] || "skip", nice(o.fulfillment_status))),
+        el("div", { class: "cust", text: o.customer_name }), el("div", { class: "meta", text: `${o.warehouse_id} · ${o.items}` }),
+        el("div", { class: "meta" }, "Promised ", el("span", { class: late ? "late" : "", text: o.promised_delivery_date }), late ? el("span", { class: "late", text: " · past promise" }) : null),
+        s ? el("div", { class: "meta", text: `${s.shipment_id} · ${s.carrier} · ${s.status}` }) : (o.fulfillment_status === "SHIPPED" ? el("div", { class: "meta late", text: "No shipment record" }) : null),
+        el("div", { class: "o-actions" }, el("button", { class: "btn sm", onclick: () => openOrder(o.order_id), "aria-label": `View details of ${o.order_id}` }, icon("eye"), "Details"),
+          el("button", { class: "btn sm primary", onclick: () => investigateOrder(o.order_id), "aria-label": `Investigate ${o.order_id}` }, icon("search"), "Investigate this order"))));
+    }
+  }
+  function investigateOrder(id) {
+    document.querySelectorAll("#fail-tools input").forEach((i) => { i.checked = false; }); updateOutageCount();
+    $("request").value = ""; selectOrder(id, false); closeDrawer(); showTab("investigate");
+    $("request").focus(); toast(`${id} selected. Press Run investigation.`);
+  }
+  $("o-search").addEventListener("input", renderOrders);
+  document.querySelectorAll("#o-filter button").forEach((b) => b.addEventListener("click", () => {
+    oFilter = b.dataset.f; document.querySelectorAll("#o-filter button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); renderOrders();
+  }));
+  let drawer = null, drawerReturn = null;
+  function closeDrawer() { if (!drawer) return; drawer.forEach((n) => n.remove()); drawer = null; drawerReturn?.focus(); }
+  async function openOrder(id) {
+    let d; try { d = await getJSON(`/api/order/${encodeURIComponent(id)}`); } catch (e) { toast(e.message, "err"); return; }
+    closeDrawer(); drawerReturn = document.activeElement;
+    const o = d.order, today = d.investigation_date, late = o.fulfillment_status !== "DELIVERED" && o.promised_delivery_date < today;
+    const bg = el("div", { class: "drawer-bg", onclick: closeDrawer });
+    const body = el("div", { class: "drawer", role: "dialog", "aria-modal": "true", "aria-label": `Order ${o.order_id}` },
+      el("div", { class: "row" }, el("span", { class: "mono", style: "font-size:18px;font-weight:700", text: o.order_id }), el("span", { class: "spacer" }), el("button", { class: "icon-btn", "aria-label": "Close", onclick: closeDrawer }, icon("x"))),
+      el("div", { class: "display", style: "font-weight:600;font-size:17px;margin-top:4px", text: o.customer_name }),
+      el("div", { class: "kv" }, el("div", {}, el("div", { class: "k", text: "Status" }), el("div", { class: "v", text: nice(o.fulfillment_status) })),
+        el("div", {}, el("div", { class: "k", text: "Warehouse" }), el("div", { class: "v", text: o.warehouse_id }), el("div", { class: "small muted", text: o.warehouse_name })),
+        el("div", {}, el("div", { class: "k", text: "Ship-by" }), el("div", { class: "v mono", text: o.ship_by_date })),
+        el("div", {}, el("div", { class: "k", text: "Promised" }), el("div", { class: `v mono ${late ? "late" : ""}`, text: o.promised_delivery_date }), late ? el("div", { class: "small late", text: "past promise" }) : null)),
+      el("button", { class: "btn primary block", style: "margin-top:14px", onclick: () => investigateOrder(o.order_id) }, icon("search"), "Investigate this order"),
+      el("h3", { class: "k-lbl", style: "margin-top:18px", text: "Items and stock by warehouse" }),
+      d.items.map((it) => el("div", { style: "margin:8px 0 12px" }, el("div", { class: "small", style: "font-weight:600;margin-bottom:4px", text: `${it.sku} · ${it.product_name} · ordered ${it.quantity}` }),
+        el("table", { class: "grid" }, el("thead", {}, el("tr", {}, ["Warehouse", "Available", ""].map((h) => el("th", { text: h })))),
+          el("tbody", {}, it.stock.map((s) => el("tr", { class: s.warehouse_id === o.warehouse_id ? "hl" : "" }, el("td", { class: "mono", text: s.warehouse_id + (s.warehouse_id === o.warehouse_id ? " (this order)" : "") }),
+            el("td", { class: s.warehouse_id === o.warehouse_id && s.available < it.quantity ? "short" : "", text: s.available }), el("td", { class: "small muted", text: s.available >= it.quantity ? "can cover all" : "" }))))))),
+      el("h3", { class: "k-lbl", style: "margin-top:18px", text: "Shipment and tracking" }),
+      d.shipments.length ? d.shipments.map((s) => el("div", { style: "margin-top:8px" },
+        el("div", { class: "small", style: "margin-bottom:6px" }, el("b", { class: "mono", text: s.shipment_id }), ` · ${s.carrier} · ${s.tracking_number} `, pill(s.status === "DELIVERED" ? "ok" : s.status === "DELAYED" ? "bad" : "info", s.status)),
+        el("div", { class: "small muted", style: "margin-bottom:10px", text: `Dispatched ${s.dispatch_date} · original ETA ${s.original_estimated_date} · current ETA ${s.current_estimated_date || "none"}${s.delay_reason ? " · reason: " + s.delay_reason : ""}` }),
+        el("ul", { class: "tl" }, s.events.map((e) => el("li", { class: e.event_type === "DELAY" ? "delay" : e.event_type === "DELIVERED" ? "deliv" : "" }, el("div", { class: "d", text: `${e.event_date} · ${e.location}` }), el("div", {}, el("b", { text: nice(e.event_type) }), ` · ${e.description}`)))),
+        s.carrier_alerts.length ? el("div", {}, el("h3", { class: "k-lbl", text: `${s.carrier} service alerts` }), s.carrier_alerts.map((a) => el("div", { class: "alert-box" }, el("b", { class: "mono", text: a.alert_id }), ` · ${nice(a.alert_type)} · ${a.location} · ${a.start_date} → ${a.end_date}`, el("div", { class: "small muted", text: a.description })))) : null))
+        : el("div", { class: "small muted", style: "margin-top:8px", text: o.fulfillment_status === "SHIPPED" ? "Marked shipped, but no shipment record exists." : "Not shipped yet." }));
+    document.body.append(bg, body); drawer = [bg, body]; body.querySelector(".icon-btn").focus();
+  }
+
+  // evaluation ---------------------------------------------------------------
+  async function loadEvaluation() {
+    const box = $("eval-body");
+    let e; try { e = await getJSON("/api/evaluation"); } catch (err) { put(box, el("div", { class: "empty", text: err.message })); return; }
+    if (!e.metrics) { put(box, el("div", { class: "empty" }, el("div", { class: "big" }, icon("chart")), "No evaluation with accuracy metrics yet.", el("div", { class: "small", text: "Run: python -m scagent scenarios --repeat 2" }))); return; }
+    const M = [["Issue identification", e.metrics.issue_accuracy, "correct problem type"], ["Cause accuracy", e.metrics.cause_accuracy, "correct cause category"],
+      ["Action recall", e.metrics.action_recall, "required actions recommended"], ["Action precision", e.metrics.action_precision, "recommended actions that were appropriate"],
+      ["Evidence grounding", e.metrics.evidence_grounding_rate, "verifier PASS on the whole run"], ["Scenario pass rate", e.metrics.scenario_pass_rate, "every single check passed"]];
+    const pct = (v) => (v == null ? "n/a" : `${Math.round(v * 100)}%`), bars = [];
+    const metrics = el("div", { class: "metrics" }, M.map(([l, v, h]) => { const bar = el("i"); bars.push([bar, v]);
+      return el("div", { class: "metric lift" }, el("div", { class: "mv", text: pct(v) }), el("div", { class: "ml", text: l }), el("div", { class: "mh", text: h }), el("div", { class: `bar ${v >= .9 ? "good" : v >= .7 ? "mid" : "low"}` }, bar)); }));
+    const runs = [...new Set(e.results.map((r) => r.run))].sort(), by = {}; e.results.forEach((r) => { (by[r.scenario] ||= {})[r.run] = r; });
+    const detail = el("div", { style: "margin-top:12px" });
+    const matrix = el("table", { class: "matrix" }, el("thead", {}, el("tr", {}, el("th", { text: "Scenario" }), runs.map((n) => el("th", { text: `Run ${n}` })))),
+      el("tbody", {}, Object.keys(by).map((sc) => el("tr", {}, el("td", { class: "sc" }, el("span", { class: "mono small", text: sc })),
+        runs.map((n) => { const r = by[sc][n]; if (!r) return el("td");
+          const b = el("button", { class: `cell ${r.passed ? "p" : "f"}`, "aria-pressed": "false", "aria-label": `${sc} run ${n}: ${r.passed ? "passed" : "failed"}`, onclick: () => {
+            matrix.querySelectorAll(".cell").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); showEvalDetail(detail, r); } }, r.passed ? "✓ pass" : "✗ fail");
+          return el("td", {}, b); })))));
+    put(box, el("div", { class: "row small muted", style: "margin-bottom:12px" }, `${e.passed}/${e.total} runs passed every check · ${e.repeat} run(s) per scenario · ${e.created || ""}`),
+      metrics, el("h3", { text: "Results per scenario (click a cell)" }), el("div", { style: "overflow-x:auto" }, matrix), detail);
+    requestAnimationFrame(() => requestAnimationFrame(() => bars.forEach(([b, v]) => { b.style.width = `${Math.round((v || 0) * 100)}%`; })));
+    matrix.querySelector(".cell.f")?.click();
+  }
+  function showEvalDetail(box, r) {
+    put(box, el("div", { class: "card", style: "background:var(--surface-2);box-shadow:none" },
+      el("div", { class: "row" }, el("b", { class: "mono", text: `${r.scenario} · run ${r.run}` }), pill(r.passed ? "pass" : "fail", r.passed ? "PASS" : "FAIL"), el("span", { class: "spacer" }),
+        r.trace_id ? el("button", { class: "btn sm", onclick: () => replay(r.trace_id), "data-tip": "Replay this recorded run in Live Investigation" }, icon("replay"), "Replay this run") : null),
+      el("div", { class: "kv" }, el("div", {}, el("div", { class: "k", text: "Issue" }), el("div", { class: "v", text: `${r.scores.issue_correct ? "✓" : "✗"} ${nice(r.report.issue_type)}` })),
+        el("div", {}, el("div", { class: "k", text: "Cause" }), el("div", { class: "v", text: `${r.scores.cause_correct ? "✓" : "✗"} ${nice(r.report.cause_category)}` })),
+        el("div", {}, el("div", { class: "k", text: "Actions" }), el("div", { class: "v small", text: (r.report.actions || []).map(nice).join(", ") || "—" }))),
+      r.failed_checks.length ? el("div", {}, el("h3", { text: "What went wrong" }), el("ul", { class: "checks" }, r.failed_checks.map((c) => el("li", {}, el("div", {}, pill(c.status, c.status.toUpperCase())), el("div", {}, el("div", { class: "cn", text: nice(c.name) }), el("div", { class: "cd", text: c.detail }))))))
+        : el("div", { class: "small", style: "margin-top:10px;color:var(--ok)", text: "Every check passed." })));
+  }
+
+  // how it works: flashcards + illustrative walkthrough ---------------------------------
+  const STAGES = [
+    { t: "Your request", icon: "msg", c: "var(--accent)", d: "You ask about an order in plain language, or pick one from the list.",
+      ex: "“Why is order ORD-1010 late, and what should we do about it?”" },
+    { t: "Agent decision", icon: "brain", c: "var(--model)", d: "The language model reads the request and everything found so far, then chooses one tool and its arguments.",
+      ex: "Chooses get_shipment_status({\"order_id\": \"ORD-1010\"}) because the order is marked shipped." },
+    { t: "Tool execution", icon: "code", c: "var(--t-ship)", d: "Python validates the request, then runs a read-only SQL query on order, shipment, inventory or carrier data.",
+      ex: "Returns: SHP-5010 in transit, last scan Toledo, OH on 2026-03-07, no delay reason recorded." },
+    { t: "Evidence review", icon: "eye", c: "var(--t-alert)", d: "The model reads the real result and decides what to investigate next, or that it has enough.",
+      ex: "No reason recorded and stuck at a hub, so it decides to check carrier alerts for Toledo, OH." },
+    { t: "Final report", icon: "report", c: "var(--ok)", d: "Findings, cited evidence, recommended actions and limitations. Python then verifies it against the data.",
+      ex: "Delayed delivery · cause: carrier service disruption (ALR-701) · contact carrier, notify customer · limitation: no new ETA yet." },
+  ];
+  function buildFlashcards() {
+    const g = $("flashcards"); put(g);
+    STAGES.forEach((s, i) => {
+      const card = el("button", { class: "flash", style: `--c:${s.c}`, "aria-pressed": "false", "aria-label": `${s.t}: show example`, "data-stage": i },
+        el("span", { class: "flash-inner" },
+          el("span", { class: "face front" }, el("span", { class: "f-num", text: `0${i + 1}` }), el("span", { class: "f-ic" }, icon(s.icon)), el("span", { class: "f-t", text: s.t }), el("span", { class: "f-d", text: s.d }),
+            el("span", { class: "f-hint" }, icon("replay"), "Click to see an example")),
+          el("span", { class: "face back", "aria-hidden": "true" }, el("span", { class: "f-num", text: `0${i + 1} · example` }), el("span", { class: "f-t", text: s.t }), el("span", { class: "f-ex", text: s.ex }),
+            el("span", { class: "f-hint" }, icon("replay"), "Click to flip back"))));
+      card.addEventListener("click", () => {
+        const on = card.getAttribute("aria-pressed") !== "true"; card.setAttribute("aria-pressed", String(on));
+        card.setAttribute("aria-label", `${s.t}: ${on ? "hide example" : "show example"}`);
+        card.querySelector(".front").setAttribute("aria-hidden", String(on)); card.querySelector(".back").setAttribute("aria-hidden", String(!on));
+      });
+      g.append(card);
+    });
+  }
+  // Illustrative walkthrough: a prepared example based on the real ORD-1010 data. Not a live run.
+  const WALK = [
+    { stage: 0, h: "The request arrives", b: "A user asks: “Why is order ORD-1010 late, and what should we do about it?” The model receives this question and descriptions of the five tools. It has no data yet." },
+    { stage: 1, h: "First decision: look up the order", b: "Without data, the model's first sensible step is the order itself.", code: "get_order_details({\"order_id\": \"ORD-1010\"})" },
+    { stage: 2, h: "Python returns the order", b: "Python validates the ID format, runs the SQL query, and returns structured data.", code: "status SHIPPED · warehouse WH-CHI · promised 2026-03-11 (passed) · 50 × SKU-606" },
+    { stage: 3, h: "Evidence review: it shipped, so check tracking", b: "Because the order has shipped, inventory can't explain the delay. The model chooses shipment tracking next.", code: "get_shipment_status({\"order_id\": \"ORD-1010\"})" },
+    { stage: 2, h: "Tracking stalled, no reason recorded", b: "The shipment is in transit, but the last scan was 9 days ago at a hub, with no delay reason and no new ETA.", code: "SHP-5010 · Great Lakes Freight · last scan Toledo, OH 2026-03-07 · delay reason: none" },
+    { stage: 3, h: "Evidence review: look for an explanation", b: "An unexplained hold at a hub suggests checking whether the carrier reported a problem there.", code: "get_carrier_alerts({\"carrier\": \"Great Lakes Freight\", \"location\": \"Toledo, OH\"})" },
+    { stage: 2, h: "A matching alert", b: "The carrier published a hub closure at the same place and dates.", code: "ALR-701 · HUB_CLOSURE · Toledo, OH · 2026-03-06 → 2026-03-13" },
+    { stage: 4, h: "The final report", b: "Issue: delayed delivery. Cause: carrier service disruption (suspected: the alert matches, but the shipment record doesn't confirm it). Actions: contact the carrier for a trace and ETA; notify the customer. Limitation: no updated ETA is available. Python then verifies every ID, date and claim against the data." },
+  ];
+  let walkIdx = 0;
+  function renderWalk() {
+    const w = $("walk"), step = WALK[walkIdx], S = STAGES[step.stage];
+    document.querySelectorAll(".flash").forEach((f) => f.classList.toggle("current", Number(f.dataset.stage) === step.stage));
+    put(w, el("div", { class: "banner warnb" }, icon("info"), el("span", {}, el("b", { text: "Illustrative walkthrough. " }), "This is a prepared example built from the ORD-1010 data, not a live run. Real investigations can take different paths depending on what each tool returns.")),
+      el("div", { class: "walk-steps", role: "group", "aria-label": "Walkthrough steps" }, WALK.map((_, i) => el("button", { class: i < walkIdx ? "past" : "", "aria-current": i === walkIdx ? "step" : null, "aria-label": `Step ${i + 1}`, text: i + 1, onclick: () => { walkIdx = i; renderWalk(); } }))),
+      el("div", { class: "walk-body", style: `--c:${S.c}` }, el("div", { class: "stage" }, icon(S.icon), `Stage ${step.stage + 1} · ${S.t}`), el("h4", { text: step.h }), el("div", { style: "color:var(--ink-2)", text: step.b }),
+        step.code ? el("pre", { text: step.code }) : null),
+      el("div", { class: "row", style: "margin-top:12px" },
+        el("button", { class: "btn", disabled: walkIdx === 0 ? "" : null, onclick: () => { walkIdx--; renderWalk(); } }, "Back"),
+        walkIdx < WALK.length - 1 ? el("button", { class: "btn primary", onclick: () => { walkIdx++; renderWalk(); } }, "Next", icon("arrow"))
+          : el("button", { class: "btn primary", onclick: () => { walkIdx = 0; renderWalk(); } }, icon("replay"), "Start again"),
+        el("span", { class: "spacer" }), el("span", { class: "small muted", text: `Step ${walkIdx + 1} of ${WALK.length}` }),
+        el("button", { class: "btn ghost", onclick: closeWalk }, "Close")));
+  }
+  function closeWalk() { $("walk").classList.add("hidden"); document.querySelectorAll(".flash").forEach((f) => f.classList.remove("current")); $("walk-btn").focus(); }
+  $("walk-btn").addEventListener("click", () => { walkIdx = 0; $("walk").classList.remove("hidden"); renderWalk(); $("walk").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); });
+  $("walk").addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" && walkIdx < WALK.length - 1) { walkIdx++; renderWalk(); }
+    if (e.key === "ArrowLeft" && walkIdx > 0) { walkIdx--; renderWalk(); }
+  });
+  function buildPaths() {
+    const P = [
+      ["Order not shipped", ["get_order_details", "check_inventory", "find_alternative_stock"], "Stock is short, so it searches other warehouses before recommending a transfer."],
+      ["Shipped, reason recorded", ["get_order_details", "get_shipment_status"], "The carrier's delay reason explains it; no further tools needed."],
+      ["Shipped, stalled, no reason", ["get_order_details", "get_shipment_status", "get_carrier_alerts"], "No explanation in the shipment record, so it checks carrier alerts."],
+      ["Order doesn't exist", ["get_order_details"], "NOT_FOUND: it stops and asks to verify the order ID instead of guessing."],
+    ];
+    put($("paths"), P.map(([t, tools, d]) => el("div", { class: "path-card lift" }, el("b", { text: t }),
+      el("div", { class: "chips" }, tools.map((n, i) => [i ? icon("chev") : null, el("span", { class: "p", style: `color:${TOOLS[n].c}`, text: TOOLS[n].label })])),
+      el("div", { class: "small muted", style: "margin-top:8px", text: d }))));
+  }
+
+  init();
+})();
+</script>
+<script>
+/* Decorative background: a stylised network of the project's fictional warehouses and carrier hubs,
+   with shipments moving along routes. It is decoration only and shows no real data.
+   Interaction: nodes near the pointer light up; clicking empty space dispatches shipments from the
+   nearest warehouse. Flow increases while an investigation is running. Static under reduced motion. */
+(() => {
+  "use strict";
+  const cv = document.getElementById("bg-net"); if (!cv || !cv.getContext) return;
+  const ctx = cv.getContext("2d");
+  const root = document.documentElement;
+  const NODES = [
+    ["WH-CHI", .47, .30, "wh"], ["WH-BOS", .87, .20, "wh"], ["WH-DAL", .40, .80, "wh"], ["WH-ATL", .72, .72, "wh"],
+    ["Seattle", .07, .14, "hub"], ["Minneapolis", .36, .13, "hub"], ["Denver", .22, .42, "hub"], ["Toledo", .62, .30, "hub"],
+    ["Hartford", .79, .33, "hub"], ["Memphis", .56, .60, "hub"], ["Phoenix", .13, .74, "hub"], ["Houston", .46, .93, "hub"],
+  ];
+  const LINKS = [["Seattle","Minneapolis"],["Seattle","Denver"],["Minneapolis","WH-CHI"],["Denver","WH-CHI"],["Denver","Phoenix"],
+    ["Denver","WH-DAL"],["Phoenix","WH-DAL"],["WH-CHI","Toledo"],["Toledo","Hartford"],["Hartford","WH-BOS"],["Toledo","WH-BOS"],
+    ["WH-CHI","Memphis"],["Memphis","WH-DAL"],["Memphis","WH-ATL"],["Toledo","WH-ATL"],["WH-DAL","Houston"],["Houston","WH-ATL"],["Hartford","WH-ATL"]];
+  let rnd = 7; const rand = () => (rnd = (rnd * 16807) % 2147483647) / 2147483647;
+  const nodes = NODES.map(([id, x, y, kind]) => ({ id, x, y, kind, hot: 0 }));
+  const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  for (let i = 0; i < 16; i++) {           // small customer drop-off points, linked to the nearest network node
+    const c = { id: "", x: .04 + rand() * .92, y: .06 + rand() * .9, kind: "cust", hot: 0 };
+    let best = null, bd = 9;
+    for (const n of nodes) if (n.kind !== "cust") { const d = (n.x - c.x) ** 2 + (n.y - c.y) ** 2; if (d < bd) { bd = d; best = n; } }
+    nodes.push(c); LINKS.push([best, c]);
+  }
+  const edges = LINKS.map(([a, b], i) => ({ a: typeof a === "string" ? byId[a] : a, b: typeof b === "string" ? byId[b] : b, bend: (i % 2 ? 1 : -1) * (0.08 + (i % 5) * 0.025) }));
+  const adj = new Map(nodes.map((n) => [n, []]));
+  for (const e of edges) { adj.get(e.a).push(e); adj.get(e.b).push(e); }
+  const whs = nodes.filter((n) => n.kind === "wh");
+
+  let W = 0, H = 0, dpr = 1, mx = -1e4, my = -1e4, px = 0, py = 0, last = 0, raf = 0, col = {};
+  const packets = [], ripples = [];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  let enabled = (() => { try { return localStorage.getItem("bg-anim") !== "off"; } catch { return true; } })();
+
+  const P = (n) => ({ x: n.x * W + px, y: n.y * H + py });
+  function ctrl(e) { const a = P(e.a), b = P(e.b); return { a, b, c: { x: (a.x + b.x) / 2 - (b.y - a.y) * e.bend, y: (a.y + b.y) / 2 + (b.x - a.x) * e.bend } }; }
+  function at(e, t) { const { a, b, c } = ctrl(e), u = 1 - t; return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y }; }
+  const len = (e) => { const a = P(e.a), b = P(e.b); return Math.hypot(a.x - b.x, a.y - b.y) * 1.05 + 1; };
+  const rgba = (hex, a) => { const h = hex.replace("#", ""); const v = h.length === 3 ? h.split("").map((x) => x + x).join("") : h;
+    const n = parseInt(v, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+
+  function readColors() {
+    const cs = getComputedStyle(root), g = (k, d) => (cs.getPropertyValue(k).trim() || d);
+    col = { line: g("--muted", "#8a94a6"), ink: g("--ink-2", "#c2c8d4"), acc: g("--accent", "#8b8cff"), cyan: g("--cyan", "#22d3ee"),
+            warn: g("--warn", "#fbbf24"), light: root.dataset.theme === "light" };
+  }
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!running()) draw(0);
+  }
+  function spawn(from) {
+    const n = from || whs[Math.floor(Math.random() * whs.length)];
+    const opts = adj.get(n); const e = opts[Math.floor(Math.random() * opts.length)];
+    packets.push({ e, fwd: e.a === n, t: 0, hops: 2 + Math.floor(Math.random() * 3), hold: 0, delayed: false, life: 1 });
+  }
+  const busy = () => document.getElementById("live-dot")?.classList.contains("on");
+  const running = () => enabled && !reduced.matches && !document.hidden;
+
+  function step(dt) {
+    px += ((mx > -1e3 ? (W / 2 - mx) * .012 : 0) - px) * Math.min(1, dt * 3);
+    py += ((my > -1e3 ? (H / 2 - my) * .012 : 0) - py) * Math.min(1, dt * 3);
+    const want = (busy() ? 30 : 15) * Math.min(1, W / 1100 + .35);
+    if (packets.length < want && Math.random() < dt * 4) spawn();
+    for (let i = packets.length - 1; i >= 0; i--) {
+      const k = packets[i];
+      if (k.hold > 0) { k.hold -= dt; continue; }
+      k.t += (busy() ? 150 : 95) * dt / len(k.e);
+      if (k.t >= 1) {
+        const node = k.fwd ? k.e.b : k.e.a;
+        if (--k.hops <= 0 || node.kind === "cust") { packets.splice(i, 1); continue; }
+        if (node.kind === "hub" && Math.random() < .14) { k.hold = 1.6 + Math.random() * 1.6; k.delayed = true; } else k.delayed = false;
+        const opts = adj.get(node).filter((e) => e !== k.e); const e = opts.length ? opts[Math.floor(Math.random() * opts.length)] : k.e;
+        k.e = e; k.fwd = e.a === node; k.t = 0;
+      }
+    }
+    for (let i = ripples.length - 1; i >= 0; i--) { ripples[i].r += dt * 220; ripples[i].a -= dt * 1.4; if (ripples[i].a <= 0) ripples.splice(i, 1); }
+    for (const n of nodes) { const p = P(n); const d = Math.hypot(p.x - mx, p.y - my); n.hot += ((d < 170 ? 1 - d / 170 : 0) - n.hot) * Math.min(1, dt * 6); }
+  }
+
+  function draw(time) {
+    ctx.clearRect(0, 0, W, H);
+    const L = col.light, base = L ? .24 : .26;
+    // faint map grid
+    ctx.fillStyle = rgba(col.line, L ? .16 : .12);
+    for (let gx = ((px % 34) + 34) % 34; gx < W; gx += 34) for (let gy = ((py % 34) + 34) % 34; gy < H; gy += 34) ctx.fillRect(gx, gy, 1.2, 1.2);
+    // routes
+    for (const e of edges) {
+      const hot = Math.max(e.a.hot, e.b.hot), { a, b, c } = ctrl(e), minor = e.b.kind === "cust";
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(c.x, c.y, b.x, b.y);
+      ctx.setLineDash(minor ? [2, 5] : [6, 7]); ctx.lineDashOffset = running() ? -time / 60 : 0;
+      ctx.strokeStyle = hot > .05 ? rgba(col.cyan, base + hot * .45) : rgba(col.line, minor ? base * .6 : base);
+      ctx.lineWidth = minor ? 1.1 : 1.6 + hot * 1.2; ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // nodes
+    const showLabels = W > 760;
+    for (const n of nodes) {
+      const p = P(n), h = n.hot;
+      if (n.kind === "cust") { ctx.fillStyle = rgba(col.line, (L ? .5 : .45) + h * .5); ctx.beginPath(); ctx.arc(p.x, p.y, 2.4 + h * 1.5, 0, 7); ctx.fill(); continue; }
+      const r = (n.kind === "wh" ? 8.5 : 5.5) * (1 + h * .45);
+      if (h > .05) { const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 5); g.addColorStop(0, rgba(col.cyan, .28 * h)); g.addColorStop(1, rgba(col.cyan, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, r * 5, 0, 7); ctx.fill(); }
+      ctx.lineWidth = 1.5; ctx.strokeStyle = rgba(n.kind === "wh" ? col.acc : col.cyan, (L ? .75 : .7) + h * .3);
+      ctx.fillStyle = rgba(n.kind === "wh" ? col.acc : col.cyan, (L ? .16 : .18) + h * .3);
+      ctx.beginPath();
+      if (n.kind === "wh") { ctx.roundRect ? ctx.roundRect(p.x - r, p.y - r, r * 2, r * 2, 3) : ctx.rect(p.x - r, p.y - r, r * 2, r * 2); }
+      else { ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x + r, p.y); ctx.lineTo(p.x, p.y + r); ctx.lineTo(p.x - r, p.y); ctx.closePath(); }
+      ctx.fill(); ctx.stroke();
+      if (showLabels || h > .5) {
+        ctx.font = `${n.kind === "wh" ? 700 : 500} ${n.kind === "wh" ? 12 : 11}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+        ctx.fillStyle = rgba(col.ink, (L ? .6 : .55) + h * .4); ctx.fillText(n.id, p.x + r + 6, p.y + 4);
+      }
+    }
+    // shipments
+    for (const k of packets) {
+      const t = k.fwd ? k.t : 1 - k.t, p = at(k.e, Math.min(1, Math.max(0, t)));
+      const c = k.delayed ? col.warn : col.cyan;
+      for (let j = 1; j <= 4 && !k.hold; j++) {        // short trail
+        const tt = k.fwd ? k.t - j * .025 : 1 - (k.t - j * .025); if (tt < 0 || tt > 1) break;
+        const q = at(k.e, tt); ctx.fillStyle = rgba(c, .34 - j * .07); ctx.beginPath(); ctx.arc(q.x, q.y, 3 - j * .4, 0, 7); ctx.fill();
+      }
+      if (k.hold > 0) { const pr = (time / 900) % 1; ctx.strokeStyle = rgba(col.warn, .55 * (1 - pr)); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 5 + pr * 16, 0, 7); ctx.stroke(); }
+      ctx.fillStyle = rgba(c, L ? .85 : .9); ctx.shadowColor = rgba(c, .8); ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3.4, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+    }
+    for (const r of ripples) { ctx.strokeStyle = rgba(col.cyan, r.a * .5); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.stroke(); }
+  }
+
+  function loop(ts) {
+    raf = 0; if (!running()) { draw(0); return; }
+    const dt = Math.min(.05, (ts - (last || ts)) / 1000); last = ts;
+    step(dt); draw(ts); raf = requestAnimationFrame(loop);
+  }
+  function kick() { if (running() && !raf) { last = 0; raf = requestAnimationFrame(loop); } else if (!running()) { packets.length = 0; ripples.length = 0; px = py = 0; draw(0); } }
+
+  addEventListener("pointermove", (e) => { mx = e.clientX; my = e.clientY; if (!running()) { for (const n of nodes) { const p = P(n); const d = Math.hypot(p.x - mx, p.y - my); n.hot = d < 170 ? 1 - d / 170 : 0; } draw(0); } }, { passive: true });
+  document.addEventListener("pointerleave", () => { mx = my = -1e4; });
+  document.addEventListener("click", (e) => {
+    if (!running() || e.target.closest("button, a, input, textarea, select, label, summary, pre, [role=tab], .card, header, .drawer, .toasts")) return;
+    ripples.push({ x: e.clientX, y: e.clientY, r: 4, a: 1 });
+    let best = whs[0], bd = Infinity;
+    for (const n of whs) { const p = P(n), d = Math.hypot(p.x - e.clientX, p.y - e.clientY); if (d < bd) { bd = d; best = n; } }
+    for (let i = 0; i < 3; i++) spawn(best);
+  });
+  addEventListener("resize", resize);
+  document.addEventListener("visibilitychange", kick);
+  reduced.addEventListener?.("change", kick);
+  new MutationObserver(() => { readColors(); if (!running()) draw(0); }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+
+  const btn = document.getElementById("bg-btn");
+  const syncBtn = () => { if (!btn) return; btn.setAttribute("aria-pressed", String(enabled));
+    btn.dataset.tip = enabled ? "Animated background: on (click to pause)" : "Animated background: paused (click to play)"; };
+  btn?.addEventListener("click", () => { enabled = !enabled; try { localStorage.setItem("bg-anim", enabled ? "on" : "off"); } catch { /* storage unavailable */ } syncBtn(); kick(); });
+
+  // glossy panels: move each panel's highlight to the pointer
+  document.addEventListener("pointermove", (e) => {
+    const p = e.target.closest?.(".card, .scen, .ocard"); if (!p) return;
+    const r = p.getBoundingClientRect();
+    p.style.setProperty("--gx", `${e.clientX - r.left}px`); p.style.setProperty("--gy", `${e.clientY - r.top}px`);
+  }, { passive: true });
+  readColors(); resize(); syncBtn();
+  for (let i = 0; i < 8; i++) { spawn(); packets[packets.length - 1].t = Math.random(); }
+  kick();
+})();
+</script>
+</body>
+</html>

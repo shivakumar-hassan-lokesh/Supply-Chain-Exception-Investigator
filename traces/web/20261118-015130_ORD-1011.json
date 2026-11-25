@@ -1,0 +1,376 @@
+{
+  "request": "Investigate the delay on order ORD-1011.",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I will look up the order\u2019s details to see its promised delivery date, fulfillment status, and warehouse so I can determine if it\u2019s overdue and where to investigate next.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2341,
+        "output_tokens": 133
+      },
+      "tool_requests": [
+        {
+          "id": "call_9lrOQ0CkLz8E1P3SUAe72kTP",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1011"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_9lrOQ0CkLz8E1P3SUAe72kTP",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1011"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 2.88
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1011",
+          "customer_name": "Wide World Importers",
+          "fulfillment_warehouse_id": "WH-ATL",
+          "fulfillment_warehouse_name": "Atlanta Distribution Center",
+          "order_date": "2026-03-06",
+          "promised_delivery_date": "2026-03-14",
+          "ship_by_date": "2026-03-09",
+          "fulfillment_status": "SHIPPED",
+          "items": [
+            {
+              "sku": "SKU-202",
+              "product_name": "Industrial Shelf Bracket",
+              "quantity": 15
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": -2,
+          "is_past_promised_date": true,
+          "is_past_ship_by_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I will retrieve the shipment status and tracking events to confirm if the delivery is overdue and see any carrier-reported delay, ETA changes, or stalled tracking.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2587,
+        "output_tokens": 131
+      },
+      "tool_requests": [
+        {
+          "id": "call_FKKLg3Yu9Rpqtk1dP3qNsPO9",
+          "name": "get_shipment_status",
+          "arguments": {
+            "order_id": "ORD-1011"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_FKKLg3Yu9Rpqtk1dP3qNsPO9",
+      "name": "get_shipment_status",
+      "arguments": {
+        "order_id": "ORD-1011"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_shipment_status",
+        "executed": true,
+        "duration_ms": 3.23
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1011",
+          "investigation_date": "2026-03-16",
+          "shipments": [
+            {
+              "shipment_id": "SHP-5011",
+              "carrier": "Harbor Express",
+              "tracking_number": "HBX-12077",
+              "status": "IN_TRANSIT",
+              "dispatch_date": "2026-03-13",
+              "original_estimated_delivery_date": "2026-03-17",
+              "current_estimated_delivery_date": "2026-03-17",
+              "delivered_date": null,
+              "recorded_delay_reason": null,
+              "events": [
+                {
+                  "event_date": "2026-03-13",
+                  "location": "Atlanta, GA",
+                  "event_type": "PICKED_UP",
+                  "description": "Picked up from WH-ATL"
+                },
+                {
+                  "event_date": "2026-03-14",
+                  "location": "Charlotte, NC",
+                  "event_type": "IN_TRANSIT",
+                  "description": "Departed sort facility"
+                },
+                {
+                  "event_date": "2026-03-15",
+                  "location": "Richmond, VA",
+                  "event_type": "IN_TRANSIT",
+                  "description": "Departed sort facility"
+                }
+              ],
+              "last_event_date": "2026-03-15",
+              "last_event_location": "Richmond, VA",
+              "days_since_last_event": 1,
+              "ship_by_date": "2026-03-09",
+              "dispatch_days_after_ship_by": 4,
+              "dispatched_late": true,
+              "promised_delivery_date": "2026-03-14",
+              "is_delivered": false,
+              "is_overdue": true,
+              "days_past_promised_date": 2,
+              "eta_after_promised_date": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 3026,
+        "output_tokens": 2152
+      },
+      "tool_requests": [
+        {
+          "id": "call_QXqOYVcwSsd1vdlWwyjQr9fN",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1011",
+            "issue_type": "DELAYED_DELIVERY",
+            "summary": "Order ORD-1011 is overdue by 2 days versus the promised delivery date 2026-03-14. The shipment was handed to the carrier 4 days after the ship-by date and is currently in transit with ETA 2026-03-17.",
+            "evidence": [
+              "get_order_details: ORD-1011 fulfillment_status SHIPPED, promised_delivery_date 2026-03-14, fulfillment_warehouse_id WH-ATL, is_past_promised_date true.",
+              "get_shipment_status: SHP-5011 carrier Harbor Express tracking HBX-12077 status IN_TRANSIT, dispatch_date 2026-03-13, ship_by_date 2026-03-09, dispatched_late true (dispatch_days_after_ship_by 4).",
+              "get_shipment_status: SHP-5011 is_overdue true, days_past_promised_date 2, current_estimated_delivery_date 2026-03-17 (ETA after promised date).",
+              "get_shipment_status: last_event 2026-03-15 at Richmond, VA, days_since_last_event 1, recorded_delay_reason null."
+            ],
+            "cause_category": "LATE_DISPATCH",
+            "likely_cause": "Late warehouse dispatch: shipment left WH-ATL on 2026-03-13, which is 4 days after the 2026-03-09 ship-by date.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "The root reason for the warehouse\u2019s late handoff is not in the data.",
+              "Whether Harbor Express will meet the 2026-03-17 ETA is not confirmed by the carrier beyond tracking events."
+            ],
+            "recommended_actions": [
+              {
+                "action": "NOTIFY_CUSTOMER",
+                "details": "Inform Wide World Importers that the order is delayed past the 2026-03-14 promise and is currently estimated to deliver on 2026-03-17 per get_shipment_status (SHP-5011 ETA 2026-03-17)."
+              },
+              {
+                "action": "CONTACT_CARRIER",
+                "details": "Ask Harbor Express to confirm current location and delivery commitment for tracking HBX-12077, since the order is overdue (get_shipment_status: is_overdue true, days_past_promised_date 2) and no delay reason is recorded."
+              },
+              {
+                "action": "ESCALATE_TO_WAREHOUSE",
+                "details": "Request WH-ATL to explain why dispatch occurred on 2026-03-13, 4 days after the 2026-03-09 ship-by date (get_shipment_status: dispatched_late true), and to implement corrective actions to prevent late handoffs."
+              }
+            ],
+            "recommendation": "Notify the customer of the new ETA, request a status/ETA confirmation from Harbor Express, and escalate to WH-ATL about the 4-day late dispatch.",
+            "recommended_source_warehouse": null,
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1011",
+        "issue_type": "DELAYED_DELIVERY",
+        "summary": "Order ORD-1011 is overdue by 2 days versus the promised delivery date 2026-03-14. The shipment was handed to the carrier 4 days after the ship-by date and is currently in transit with ETA 2026-03-17.",
+        "evidence": [
+          "get_order_details: ORD-1011 fulfillment_status SHIPPED, promised_delivery_date 2026-03-14, fulfillment_warehouse_id WH-ATL, is_past_promised_date true.",
+          "get_shipment_status: SHP-5011 carrier Harbor Express tracking HBX-12077 status IN_TRANSIT, dispatch_date 2026-03-13, ship_by_date 2026-03-09, dispatched_late true (dispatch_days_after_ship_by 4).",
+          "get_shipment_status: SHP-5011 is_overdue true, days_past_promised_date 2, current_estimated_delivery_date 2026-03-17 (ETA after promised date).",
+          "get_shipment_status: last_event 2026-03-15 at Richmond, VA, days_since_last_event 1, recorded_delay_reason null."
+        ],
+        "cause_category": "LATE_DISPATCH",
+        "likely_cause": "Late warehouse dispatch: shipment left WH-ATL on 2026-03-13, which is 4 days after the 2026-03-09 ship-by date.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "The root reason for the warehouse\u2019s late handoff is not in the data.",
+          "Whether Harbor Express will meet the 2026-03-17 ETA is not confirmed by the carrier beyond tracking events."
+        ],
+        "recommended_actions": [
+          {
+            "action": "NOTIFY_CUSTOMER",
+            "details": "Inform Wide World Importers that the order is delayed past the 2026-03-14 promise and is currently estimated to deliver on 2026-03-17 per get_shipment_status (SHP-5011 ETA 2026-03-17)."
+          },
+          {
+            "action": "CONTACT_CARRIER",
+            "details": "Ask Harbor Express to confirm current location and delivery commitment for tracking HBX-12077, since the order is overdue (get_shipment_status: is_overdue true, days_past_promised_date 2) and no delay reason is recorded."
+          },
+          {
+            "action": "ESCALATE_TO_WAREHOUSE",
+            "details": "Request WH-ATL to explain why dispatch occurred on 2026-03-13, 4 days after the 2026-03-09 ship-by date (get_shipment_status: dispatched_late true), and to implement corrective actions to prevent late handoffs."
+          }
+        ],
+        "recommendation": "Notify the customer of the new ETA, request a status/ETA confirmation from Harbor Express, and escalate to WH-ATL about the 4-day late dispatch.",
+        "recommended_source_warehouse": null,
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1011",
+    "issue_type": "DELAYED_DELIVERY",
+    "summary": "Order ORD-1011 is overdue by 2 days versus the promised delivery date 2026-03-14. The shipment was handed to the carrier 4 days after the ship-by date and is currently in transit with ETA 2026-03-17.",
+    "evidence": [
+      "get_order_details: ORD-1011 fulfillment_status SHIPPED, promised_delivery_date 2026-03-14, fulfillment_warehouse_id WH-ATL, is_past_promised_date true.",
+      "get_shipment_status: SHP-5011 carrier Harbor Express tracking HBX-12077 status IN_TRANSIT, dispatch_date 2026-03-13, ship_by_date 2026-03-09, dispatched_late true (dispatch_days_after_ship_by 4).",
+      "get_shipment_status: SHP-5011 is_overdue true, days_past_promised_date 2, current_estimated_delivery_date 2026-03-17 (ETA after promised date).",
+      "get_shipment_status: last_event 2026-03-15 at Richmond, VA, days_since_last_event 1, recorded_delay_reason null."
+    ],
+    "cause_category": "LATE_DISPATCH",
+    "likely_cause": "Late warehouse dispatch: shipment left WH-ATL on 2026-03-13, which is 4 days after the 2026-03-09 ship-by date.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "The root reason for the warehouse\u2019s late handoff is not in the data.",
+      "Whether Harbor Express will meet the 2026-03-17 ETA is not confirmed by the carrier beyond tracking events."
+    ],
+    "recommended_actions": [
+      {
+        "action": "NOTIFY_CUSTOMER",
+        "details": "Inform Wide World Importers that the order is delayed past the 2026-03-14 promise and is currently estimated to deliver on 2026-03-17 per get_shipment_status (SHP-5011 ETA 2026-03-17)."
+      },
+      {
+        "action": "CONTACT_CARRIER",
+        "details": "Ask Harbor Express to confirm current location and delivery commitment for tracking HBX-12077, since the order is overdue (get_shipment_status: is_overdue true, days_past_promised_date 2) and no delay reason is recorded."
+      },
+      {
+        "action": "ESCALATE_TO_WAREHOUSE",
+        "details": "Request WH-ATL to explain why dispatch occurred on 2026-03-13, 4 days after the 2026-03-09 ship-by date (get_shipment_status: dispatched_late true), and to implement corrective actions to prevent late handoffs."
+      }
+    ],
+    "recommendation": "Notify the customer of the new ETA, request a status/ETA confirmation from Harbor Express, and escalate to WH-ATL about the 4-day late dispatch.",
+    "recommended_source_warehouse": null,
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1011"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all factual dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "get_shipment_status showed the shipment overdue / ETA after promise"
+      },
+      {
+        "name": "cause_supported_by_evidence",
+        "status": "pass",
+        "detail": "dispatch happened after the ship-by date"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "actions_supported_by_evidence",
+        "status": "pass",
+        "detail": "3 action(s), each with the evidence it needs"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says DELAYED_DELIVERY, report says DELAYED_DELIVERY"
+      },
+      {
+        "name": "cause_matches_database",
+        "status": "pass",
+        "detail": "database says LATE_DISPATCH, report says LATE_DISPATCH"
+      },
+      {
+        "name": "actions_appropriate",
+        "status": "pass",
+        "detail": "required met 1/1"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1011",
+      "fulfillment_status": "SHIPPED",
+      "past_promise": true,
+      "short_items": [],
+      "viable_sources": {},
+      "issue_type": "DELAYED_DELIVERY",
+      "matching_alerts": [],
+      "dispatched_late": true,
+      "cause_category": "LATE_DISPATCH",
+      "acceptable_issue_types": [
+        "DELAYED_DELIVERY"
+      ],
+      "acceptable_causes": [
+        "LATE_DISPATCH"
+      ],
+      "expected_actions": {
+        "required_any_of": [
+          [
+            "ESCALATE_TO_WAREHOUSE"
+          ]
+        ],
+        "allowed": [
+          "CONTACT_CARRIER",
+          "ESCALATE_TO_WAREHOUSE",
+          "NOTIFY_CUSTOMER"
+        ]
+      }
+    },
+    "tool_errors_seen": "[]"
+  }
+}

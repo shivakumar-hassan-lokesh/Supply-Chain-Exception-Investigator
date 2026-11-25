@@ -1,0 +1,378 @@
+{
+  "request": "Investigate order ORD-1003. Is anything wrong, and what should we do?",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I will look up the order details to see its status, promised delivery date, warehouse, and items to determine if there's a delay or potential stock issue.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2348,
+        "output_tokens": 130
+      },
+      "tool_requests": [
+        {
+          "id": "call_FciCUZbBAh1UN2NevIuvToQg",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1003"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_FciCUZbBAh1UN2NevIuvToQg",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1003"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 1.68
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1003",
+          "customer_name": "Contoso Hardware",
+          "fulfillment_warehouse_id": "WH-CHI",
+          "fulfillment_warehouse_name": "Chicago Distribution Center",
+          "order_date": "2026-03-02",
+          "promised_delivery_date": "2026-03-09",
+          "ship_by_date": "2026-03-04",
+          "fulfillment_status": "SHIPPED",
+          "items": [
+            {
+              "sku": "SKU-303",
+              "product_name": "LED Panel Light 60W",
+              "quantity": 20
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": -7,
+          "is_past_promised_date": true,
+          "is_past_ship_by_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I will retrieve the shipment tracking to confirm if the delivery is overdue and see any carrier-recorded delay reason or stalled tracking.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2592,
+        "output_tokens": 253
+      },
+      "tool_requests": [
+        {
+          "id": "call_jB1rdwY8aT5WPOURmfbzttH3",
+          "name": "get_shipment_status",
+          "arguments": {
+            "order_id": "ORD-1003"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_jB1rdwY8aT5WPOURmfbzttH3",
+      "name": "get_shipment_status",
+      "arguments": {
+        "order_id": "ORD-1003"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_shipment_status",
+        "executed": true,
+        "duration_ms": 2.66
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1003",
+          "investigation_date": "2026-03-16",
+          "shipments": [
+            {
+              "shipment_id": "SHP-5003",
+              "carrier": "Great Lakes Freight",
+              "tracking_number": "GLF-88231",
+              "status": "DELAYED",
+              "dispatch_date": "2026-03-04",
+              "original_estimated_delivery_date": "2026-03-09",
+              "current_estimated_delivery_date": "2026-03-18",
+              "delivered_date": null,
+              "recorded_delay_reason": "Carrier reported hub closure at Toledo, OH due to winter storm",
+              "events": [
+                {
+                  "event_date": "2026-03-04",
+                  "location": "Chicago, IL",
+                  "event_type": "PICKED_UP",
+                  "description": "Picked up from WH-CHI"
+                },
+                {
+                  "event_date": "2026-03-05",
+                  "location": "Gary, IN",
+                  "event_type": "IN_TRANSIT",
+                  "description": "Departed regional terminal"
+                },
+                {
+                  "event_date": "2026-03-06",
+                  "location": "Toledo, OH",
+                  "event_type": "ARRIVED_AT_HUB",
+                  "description": "Arrived at Toledo hub"
+                },
+                {
+                  "event_date": "2026-03-07",
+                  "location": "Toledo, OH",
+                  "event_type": "DELAY",
+                  "description": "Hub closed due to winter storm; revised ETA 2026-03-18"
+                },
+                {
+                  "event_date": "2026-03-12",
+                  "location": "Toledo, OH",
+                  "event_type": "DEPARTED_HUB",
+                  "description": "Departed Toledo hub after reopening"
+                }
+              ],
+              "last_event_date": "2026-03-12",
+              "last_event_location": "Toledo, OH",
+              "days_since_last_event": 4,
+              "ship_by_date": "2026-03-04",
+              "dispatch_days_after_ship_by": 0,
+              "dispatched_late": false,
+              "promised_delivery_date": "2026-03-09",
+              "is_delivered": false,
+              "is_overdue": true,
+              "days_past_promised_date": 7,
+              "eta_after_promised_date": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "model_turn",
+      "text": "",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 3133,
+        "output_tokens": 1806
+      },
+      "tool_requests": [
+        {
+          "id": "call_igBFfJDA4Pp8SSwwAeg7VCmO",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1003",
+            "issue_type": "DELAYED_DELIVERY",
+            "summary": "Yes\u2014delivery is delayed. The carrier reports a hub closure in Toledo, OH due to a winter storm; the shipment is overdue by 7 days with a revised ETA of 2026-03-18.",
+            "evidence": [
+              "get_order_details: ORD-1003 fulfillment_status SHIPPED, promised_delivery_date 2026-03-09, investigation_date 2026-03-16, is_past_promised_date true.",
+              "get_shipment_status: SHP-5003 (Great Lakes Freight, tracking GLF-88231) status DELAYED, current_estimated_delivery_date 2026-03-18, is_overdue true, days_past_promised_date 7.",
+              "get_shipment_status: recorded_delay_reason \"Carrier reported hub closure at Toledo, OH due to winter storm\".",
+              "get_shipment_status: events include ARRIVED_AT_HUB at Toledo, OH on 2026-03-06; DELAY at Toledo, OH on 2026-03-07 (hub closed); DEPARTED_HUB Toledo, OH on 2026-03-12; days_since_last_event 4.",
+              "get_shipment_status: dispatch_date 2026-03-04 equals ship_by_date 2026-03-04; dispatched_late false."
+            ],
+            "cause_category": "CARRIER_REPORTED_DELAY",
+            "likely_cause": "Carrier hub closure at Toledo, OH due to a winter storm, as recorded by the carrier.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "Whether the shipment will meet the updated ETA of 2026-03-18 since the last tracking event was 2026-03-12 (4 days ago)."
+            ],
+            "recommended_actions": [
+              {
+                "action": "CONTACT_CARRIER",
+                "details": "Contact Great Lakes Freight for shipment SHP-5003 (tracking GLF-88231) to request a trace, current location, and confirmation of the revised ETA 2026-03-18; the shipment is overdue by 7 days per get_shipment_status and has had no scan since 2026-03-12."
+              },
+              {
+                "action": "NOTIFY_CUSTOMER",
+                "details": "Inform Contoso Hardware that order ORD-1003 is delayed due to a carrier hub closure in Toledo, OH from a winter storm (per get_shipment_status) and provide the current ETA of 2026-03-18; advise that we are confirming with the carrier and will update them if the date changes."
+              }
+            ],
+            "recommendation": "Contact Great Lakes Freight to confirm the 2026-03-18 ETA for SHP-5003, then notify the customer with the cause and updated delivery date.",
+            "recommended_source_warehouse": null,
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1003",
+        "issue_type": "DELAYED_DELIVERY",
+        "summary": "Yes\u2014delivery is delayed. The carrier reports a hub closure in Toledo, OH due to a winter storm; the shipment is overdue by 7 days with a revised ETA of 2026-03-18.",
+        "evidence": [
+          "get_order_details: ORD-1003 fulfillment_status SHIPPED, promised_delivery_date 2026-03-09, investigation_date 2026-03-16, is_past_promised_date true.",
+          "get_shipment_status: SHP-5003 (Great Lakes Freight, tracking GLF-88231) status DELAYED, current_estimated_delivery_date 2026-03-18, is_overdue true, days_past_promised_date 7.",
+          "get_shipment_status: recorded_delay_reason \"Carrier reported hub closure at Toledo, OH due to winter storm\".",
+          "get_shipment_status: events include ARRIVED_AT_HUB at Toledo, OH on 2026-03-06; DELAY at Toledo, OH on 2026-03-07 (hub closed); DEPARTED_HUB Toledo, OH on 2026-03-12; days_since_last_event 4.",
+          "get_shipment_status: dispatch_date 2026-03-04 equals ship_by_date 2026-03-04; dispatched_late false."
+        ],
+        "cause_category": "CARRIER_REPORTED_DELAY",
+        "likely_cause": "Carrier hub closure at Toledo, OH due to a winter storm, as recorded by the carrier.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "Whether the shipment will meet the updated ETA of 2026-03-18 since the last tracking event was 2026-03-12 (4 days ago)."
+        ],
+        "recommended_actions": [
+          {
+            "action": "CONTACT_CARRIER",
+            "details": "Contact Great Lakes Freight for shipment SHP-5003 (tracking GLF-88231) to request a trace, current location, and confirmation of the revised ETA 2026-03-18; the shipment is overdue by 7 days per get_shipment_status and has had no scan since 2026-03-12."
+          },
+          {
+            "action": "NOTIFY_CUSTOMER",
+            "details": "Inform Contoso Hardware that order ORD-1003 is delayed due to a carrier hub closure in Toledo, OH from a winter storm (per get_shipment_status) and provide the current ETA of 2026-03-18; advise that we are confirming with the carrier and will update them if the date changes."
+          }
+        ],
+        "recommendation": "Contact Great Lakes Freight to confirm the 2026-03-18 ETA for SHP-5003, then notify the customer with the cause and updated delivery date.",
+        "recommended_source_warehouse": null,
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1003",
+    "issue_type": "DELAYED_DELIVERY",
+    "summary": "Yes\u2014delivery is delayed. The carrier reports a hub closure in Toledo, OH due to a winter storm; the shipment is overdue by 7 days with a revised ETA of 2026-03-18.",
+    "evidence": [
+      "get_order_details: ORD-1003 fulfillment_status SHIPPED, promised_delivery_date 2026-03-09, investigation_date 2026-03-16, is_past_promised_date true.",
+      "get_shipment_status: SHP-5003 (Great Lakes Freight, tracking GLF-88231) status DELAYED, current_estimated_delivery_date 2026-03-18, is_overdue true, days_past_promised_date 7.",
+      "get_shipment_status: recorded_delay_reason \"Carrier reported hub closure at Toledo, OH due to winter storm\".",
+      "get_shipment_status: events include ARRIVED_AT_HUB at Toledo, OH on 2026-03-06; DELAY at Toledo, OH on 2026-03-07 (hub closed); DEPARTED_HUB Toledo, OH on 2026-03-12; days_since_last_event 4.",
+      "get_shipment_status: dispatch_date 2026-03-04 equals ship_by_date 2026-03-04; dispatched_late false."
+    ],
+    "cause_category": "CARRIER_REPORTED_DELAY",
+    "likely_cause": "Carrier hub closure at Toledo, OH due to a winter storm, as recorded by the carrier.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "Whether the shipment will meet the updated ETA of 2026-03-18 since the last tracking event was 2026-03-12 (4 days ago)."
+    ],
+    "recommended_actions": [
+      {
+        "action": "CONTACT_CARRIER",
+        "details": "Contact Great Lakes Freight for shipment SHP-5003 (tracking GLF-88231) to request a trace, current location, and confirmation of the revised ETA 2026-03-18; the shipment is overdue by 7 days per get_shipment_status and has had no scan since 2026-03-12."
+      },
+      {
+        "action": "NOTIFY_CUSTOMER",
+        "details": "Inform Contoso Hardware that order ORD-1003 is delayed due to a carrier hub closure in Toledo, OH from a winter storm (per get_shipment_status) and provide the current ETA of 2026-03-18; advise that we are confirming with the carrier and will update them if the date changes."
+      }
+    ],
+    "recommendation": "Contact Great Lakes Freight to confirm the 2026-03-18 ETA for SHP-5003, then notify the customer with the cause and updated delivery date.",
+    "recommended_source_warehouse": null,
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1003"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all factual dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "get_shipment_status showed the shipment overdue / ETA after promise"
+      },
+      {
+        "name": "cause_supported_by_evidence",
+        "status": "pass",
+        "detail": "shipment record contains a carrier delay reason"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "skip",
+        "detail": "no transfer recommended"
+      },
+      {
+        "name": "actions_supported_by_evidence",
+        "status": "pass",
+        "detail": "2 action(s), each with the evidence it needs"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says DELAYED_DELIVERY, report says DELAYED_DELIVERY"
+      },
+      {
+        "name": "cause_matches_database",
+        "status": "pass",
+        "detail": "database says CARRIER_REPORTED_DELAY/CARRIER_SERVICE_DISRUPTION, report says CARRIER_REPORTED_DELAY"
+      },
+      {
+        "name": "actions_appropriate",
+        "status": "pass",
+        "detail": "required met 1/1"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1003",
+      "fulfillment_status": "SHIPPED",
+      "past_promise": true,
+      "short_items": [],
+      "viable_sources": {},
+      "issue_type": "DELAYED_DELIVERY",
+      "matching_alerts": [
+        "ALR-701"
+      ],
+      "dispatched_late": false,
+      "cause_category": "CARRIER_REPORTED_DELAY",
+      "acceptable_causes": [
+        "CARRIER_REPORTED_DELAY",
+        "CARRIER_SERVICE_DISRUPTION"
+      ],
+      "acceptable_issue_types": [
+        "DELAYED_DELIVERY"
+      ],
+      "expected_actions": {
+        "required_any_of": [
+          [
+            "NOTIFY_CUSTOMER"
+          ]
+        ],
+        "allowed": [
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER"
+        ]
+      }
+    },
+    "tool_errors_seen": "[]"
+  }
+}

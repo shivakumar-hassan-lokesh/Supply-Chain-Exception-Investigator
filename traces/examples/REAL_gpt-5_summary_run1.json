@@ -1,0 +1,501 @@
+{
+  "provider": "openai",
+  "model": "gpt-5",
+  "passed": 10,
+  "total": 10,
+  "results": [
+    {
+      "scenario": "S1_shortage_with_alternative",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-CHI, acceptable ['WH-CHI']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-202",
+          "status": "pass",
+          "detail": "'SKU-202' found in report"
+        },
+        {
+          "name": "mentions:WH-BOS",
+          "status": "pass",
+          "detail": "'WH-BOS' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ]
+    },
+    {
+      "scenario": "S2_delay_with_carrier_reason",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got confirmed, acceptable ['confirmed']"
+        },
+        {
+          "name": "mentions:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' found in report"
+        },
+        {
+          "name": "mentions:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ]
+    },
+    {
+      "scenario": "S3a_unknown_order",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got ORDER_NOT_FOUND, acceptable ['ORDER_NOT_FOUND']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details"
+      ]
+    },
+    {
+      "scenario": "S3b_missing_shipment_record",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['MISSING_DATA', 'INCONCLUSIVE', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "missing_information_listed",
+          "status": "pass",
+          "detail": "missing_information = ['Shipment record for ORD-1007', 'Carrier name', 'Tracking number', 'Dispatch/hand-off date', 'Current estimated delivery date', 'Most recent tracking scan/location', 'Recorded delay reason, if any']"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ]
+    },
+    {
+      "scenario": "S4_tool_failure",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['INCONCLUSIVE', 'MISSING_DATA', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got False, expected False"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got unknown, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:Toledo",
+          "status": "pass",
+          "detail": "'Toledo' absent"
+        },
+        {
+          "name": "does_not_mention:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' absent"
+        },
+        {
+          "name": "does_not_mention:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' absent"
+        },
+        {
+          "name": "does_not_mention:no delay reason",
+          "status": "pass",
+          "detail": "'no delay reason' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ]
+    },
+    {
+      "scenario": "S5_no_exception",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ]
+    },
+    {
+      "scenario": "X1_shortage_no_single_source",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-404",
+          "status": "pass",
+          "detail": "'SKU-404' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ]
+    },
+    {
+      "scenario": "X2_multi_item_shortage",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-BOS, acceptable ['WH-BOS']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-303",
+          "status": "pass",
+          "detail": "'SKU-303' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "check_inventory",
+        "find_alternative_stock"
+      ]
+    },
+    {
+      "scenario": "X3_overdue_unknown_cause",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got suspected, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "mentions:SHP-5004",
+          "status": "pass",
+          "detail": "'SHP-5004' found in report"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:weather",
+          "status": "pass",
+          "detail": "'weather' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ]
+    },
+    {
+      "scenario": "X4_pending_but_fine",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory"
+      ]
+    }
+  ]
+}

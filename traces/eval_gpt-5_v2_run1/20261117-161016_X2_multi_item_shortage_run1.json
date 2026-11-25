@@ -1,0 +1,459 @@
+{
+  "request": "Investigate the hold-up on order ORD-1008.",
+  "meta": {
+    "provider": "openai",
+    "model": "gpt-5",
+    "investigation_date": "2026-03-16",
+    "max_tool_calls": 8,
+    "simulated_failing_tools": "none",
+    "scenario": "X2_multi_item_shortage",
+    "scenario_passed": true,
+    "run": 1
+  },
+  "steps": [
+    {
+      "step": 1,
+      "type": "model_turn",
+      "text": "I'll pull the order details first to see fulfillment status, promised date, items, and the shipping warehouse.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2261,
+        "output_tokens": 120
+      },
+      "tool_requests": [
+        {
+          "id": "call_OKmMbLbILAxBBF9UpxSz3jqc",
+          "name": "get_order_details",
+          "arguments": {
+            "order_id": "ORD-1008"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "type": "tool_execution",
+      "tool_call_id": "call_OKmMbLbILAxBBF9UpxSz3jqc",
+      "name": "get_order_details",
+      "arguments": {
+        "order_id": "ORD-1008"
+      },
+      "meta": {
+        "python_function": "scagent.tools.get_order_details",
+        "executed": true,
+        "duration_ms": 1.13
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "order_id": "ORD-1008",
+          "customer_name": "Woodgrove Clinic",
+          "fulfillment_warehouse_id": "WH-DAL",
+          "fulfillment_warehouse_name": "Dallas Distribution Center",
+          "order_date": "2026-03-11",
+          "promised_delivery_date": "2026-03-17",
+          "ship_by_date": "2026-03-16",
+          "fulfillment_status": "PENDING_FULFILLMENT",
+          "items": [
+            {
+              "sku": "SKU-303",
+              "product_name": "LED Panel Light 60W",
+              "quantity": 30
+            },
+            {
+              "sku": "SKU-606",
+              "product_name": "Nitrile Safety Gloves (box of 100)",
+              "quantity": 100
+            }
+          ],
+          "investigation_date": "2026-03-16",
+          "days_until_promised_date": 1,
+          "is_past_promised_date": false,
+          "is_past_ship_by_date": false
+        }
+      }
+    },
+    {
+      "step": 3,
+      "type": "model_turn",
+      "text": "I'll check inventory for SKU-303 at WH-DAL to see if the warehouse can fulfill that line item. \nI'll also check inventory for SKU-606 at WH-DAL for the same reason.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2530,
+        "output_tokens": 374
+      },
+      "tool_requests": [
+        {
+          "id": "call_MFBlSTs2xHpi9BilhzQv68TH",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-303",
+            "warehouse_id": "WH-DAL"
+          }
+        },
+        {
+          "id": "call_3ksWVAA6zBsskFJfBSK5Ki82",
+          "name": "check_inventory",
+          "arguments": {
+            "sku": "SKU-606",
+            "warehouse_id": "WH-DAL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "type": "tool_execution",
+      "tool_call_id": "call_MFBlSTs2xHpi9BilhzQv68TH",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-303",
+        "warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 0.66
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-303",
+          "warehouse_id": "WH-DAL",
+          "on_hand": 22,
+          "reserved": 2,
+          "available": 20,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 5,
+      "type": "tool_execution",
+      "tool_call_id": "call_3ksWVAA6zBsskFJfBSK5Ki82",
+      "name": "check_inventory",
+      "arguments": {
+        "sku": "SKU-606",
+        "warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.check_inventory",
+        "executed": true,
+        "duration_ms": 0.25
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-606",
+          "warehouse_id": "WH-DAL",
+          "on_hand": 250,
+          "reserved": 0,
+          "available": 250,
+          "inventory_record_exists": true
+        }
+      }
+    },
+    {
+      "step": 6,
+      "type": "model_turn",
+      "text": "I'll search other warehouses for SKU-303 to see if any single site can cover the 10-unit shortfall.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2759,
+        "output_tokens": 519
+      },
+      "tool_requests": [
+        {
+          "id": "call_sSvjfbBrTXdAmR3mhRYoNXvn",
+          "name": "find_alternative_stock",
+          "arguments": {
+            "sku": "SKU-303",
+            "required_quantity": 10,
+            "exclude_warehouse_id": "WH-DAL"
+          }
+        }
+      ]
+    },
+    {
+      "step": 7,
+      "type": "tool_execution",
+      "tool_call_id": "call_sSvjfbBrTXdAmR3mhRYoNXvn",
+      "name": "find_alternative_stock",
+      "arguments": {
+        "sku": "SKU-303",
+        "required_quantity": 10,
+        "exclude_warehouse_id": "WH-DAL"
+      },
+      "meta": {
+        "python_function": "scagent.tools.find_alternative_stock",
+        "executed": true,
+        "duration_ms": 1.67
+      },
+      "result": {
+        "ok": true,
+        "data": {
+          "sku": "SKU-303",
+          "required_quantity": 10,
+          "excluded_warehouse_id": "WH-DAL",
+          "warehouses_checked": [
+            {
+              "warehouse_id": "WH-BOS",
+              "warehouse_name": "Boston Distribution Center",
+              "available": 50,
+              "can_cover_required_quantity": true
+            },
+            {
+              "warehouse_id": "WH-ATL",
+              "warehouse_name": "Atlanta Distribution Center",
+              "available": 6,
+              "can_cover_required_quantity": false
+            },
+            {
+              "warehouse_id": "WH-CHI",
+              "warehouse_name": "Chicago Distribution Center",
+              "available": 5,
+              "can_cover_required_quantity": false
+            }
+          ],
+          "warehouses_with_sufficient_stock": [
+            "WH-BOS"
+          ],
+          "total_available_in_checked_warehouses": 61
+        }
+      }
+    },
+    {
+      "step": 8,
+      "type": "model_turn",
+      "text": "I'll finalize the investigation with a report summarizing the confirmed stock shortfall, supporting evidence, and recommended actions to resolve it before the promised date.",
+      "stop_reason": "tool_calls",
+      "usage": {
+        "input_tokens": 2997,
+        "output_tokens": 1998
+      },
+      "tool_requests": [
+        {
+          "id": "call_pbIGa2UXo2h4Yqsz9l4W6drF",
+          "name": "submit_report",
+          "arguments": {
+            "order_id": "ORD-1008",
+            "issue_type": "INSUFFICIENT_INVENTORY",
+            "summary": "Order ORD-1008 is on hold at WH-DAL due to a confirmed stock shortfall on SKU-303; SKU-606 has sufficient stock. Recommend transferring 10 units of SKU-303 from WH-BOS and shipping available items now.",
+            "evidence": [
+              "get_order_details: ORD-1008 for Woodgrove Clinic at WH-DAL, fulfillment_status PENDING_FULFILLMENT, ship_by_date 2026-03-16, promised_delivery_date 2026-03-17, items SKU-303 qty 30 and SKU-606 qty 100.",
+              "check_inventory: SKU-303 at WH-DAL on_hand 22, reserved 2, available 20 (ordered 30) -> shortfall 10.",
+              "check_inventory: SKU-606 at WH-DAL on_hand 250, reserved 0, available 250 (ordered 100).",
+              "find_alternative_stock: SKU-303 required_quantity 10; WH-BOS available 50, can_cover_required_quantity true (WH-ATL 6 false; WH-CHI 5 false)."
+            ],
+            "cause_category": "STOCK_SHORTAGE",
+            "likely_cause": "Insufficient available stock of SKU-303 at WH-DAL (20 available vs 30 ordered), preventing complete fulfillment.",
+            "cause_status": "confirmed",
+            "uncertainties": [
+              "Whether a transfer from WH-BOS can arrive before the 2026-03-17 promised delivery date.",
+              "Customer preference for partial shipment versus waiting for complete order."
+            ],
+            "recommended_actions": [
+              {
+                "action": "TRANSFER_STOCK",
+                "details": "Initiate an immediate transfer of 10 units of SKU-303 from WH-BOS to WH-DAL to cover the shortfall; evidence: find_alternative_stock shows WH-BOS available 50 and can_cover_required_quantity true, and check_inventory shows WH-DAL available 20 vs ordered 30."
+              },
+              {
+                "action": "SHIP_PARTIAL",
+                "details": "From WH-DAL, ship now the 20 units of SKU-303 that are available and all 100 units of SKU-606; evidence: check_inventory shows SKU-303 available 20 and SKU-606 available 250 at WH-DAL."
+              },
+              {
+                "action": "NOTIFY_CUSTOMER",
+                "details": "Inform Woodgrove Clinic that 10 units of SKU-303 will follow in a separate shipment due to a stock shortfall at WH-DAL, and provide an updated ETA once the transfer is scheduled; evidence: get_order_details promised_delivery_date 2026-03-17 and check_inventory shows a 10-unit shortfall on SKU-303."
+              }
+            ],
+            "recommendation": "Transfer 10 units of SKU-303 from WH-BOS to WH-DAL and ship available items now, notifying the customer about the split shipment and updated ETA for the remaining 10 units.",
+            "recommended_source_warehouse": "WH-BOS",
+            "missing_information": [],
+            "investigation_complete": true
+          }
+        }
+      ]
+    },
+    {
+      "step": 9,
+      "type": "final_report",
+      "report": {
+        "order_id": "ORD-1008",
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "summary": "Order ORD-1008 is on hold at WH-DAL due to a confirmed stock shortfall on SKU-303; SKU-606 has sufficient stock. Recommend transferring 10 units of SKU-303 from WH-BOS and shipping available items now.",
+        "evidence": [
+          "get_order_details: ORD-1008 for Woodgrove Clinic at WH-DAL, fulfillment_status PENDING_FULFILLMENT, ship_by_date 2026-03-16, promised_delivery_date 2026-03-17, items SKU-303 qty 30 and SKU-606 qty 100.",
+          "check_inventory: SKU-303 at WH-DAL on_hand 22, reserved 2, available 20 (ordered 30) -> shortfall 10.",
+          "check_inventory: SKU-606 at WH-DAL on_hand 250, reserved 0, available 250 (ordered 100).",
+          "find_alternative_stock: SKU-303 required_quantity 10; WH-BOS available 50, can_cover_required_quantity true (WH-ATL 6 false; WH-CHI 5 false)."
+        ],
+        "cause_category": "STOCK_SHORTAGE",
+        "likely_cause": "Insufficient available stock of SKU-303 at WH-DAL (20 available vs 30 ordered), preventing complete fulfillment.",
+        "cause_status": "confirmed",
+        "uncertainties": [
+          "Whether a transfer from WH-BOS can arrive before the 2026-03-17 promised delivery date.",
+          "Customer preference for partial shipment versus waiting for complete order."
+        ],
+        "recommended_actions": [
+          {
+            "action": "TRANSFER_STOCK",
+            "details": "Initiate an immediate transfer of 10 units of SKU-303 from WH-BOS to WH-DAL to cover the shortfall; evidence: find_alternative_stock shows WH-BOS available 50 and can_cover_required_quantity true, and check_inventory shows WH-DAL available 20 vs ordered 30."
+          },
+          {
+            "action": "SHIP_PARTIAL",
+            "details": "From WH-DAL, ship now the 20 units of SKU-303 that are available and all 100 units of SKU-606; evidence: check_inventory shows SKU-303 available 20 and SKU-606 available 250 at WH-DAL."
+          },
+          {
+            "action": "NOTIFY_CUSTOMER",
+            "details": "Inform Woodgrove Clinic that 10 units of SKU-303 will follow in a separate shipment due to a stock shortfall at WH-DAL, and provide an updated ETA once the transfer is scheduled; evidence: get_order_details promised_delivery_date 2026-03-17 and check_inventory shows a 10-unit shortfall on SKU-303."
+          }
+        ],
+        "recommendation": "Transfer 10 units of SKU-303 from WH-BOS to WH-DAL and ship available items now, notifying the customer about the split shipment and updated ETA for the remaining 10 units.",
+        "recommended_source_warehouse": "WH-BOS",
+        "missing_information": [],
+        "investigation_complete": true
+      }
+    }
+  ],
+  "final_report": {
+    "order_id": "ORD-1008",
+    "issue_type": "INSUFFICIENT_INVENTORY",
+    "summary": "Order ORD-1008 is on hold at WH-DAL due to a confirmed stock shortfall on SKU-303; SKU-606 has sufficient stock. Recommend transferring 10 units of SKU-303 from WH-BOS and shipping available items now.",
+    "evidence": [
+      "get_order_details: ORD-1008 for Woodgrove Clinic at WH-DAL, fulfillment_status PENDING_FULFILLMENT, ship_by_date 2026-03-16, promised_delivery_date 2026-03-17, items SKU-303 qty 30 and SKU-606 qty 100.",
+      "check_inventory: SKU-303 at WH-DAL on_hand 22, reserved 2, available 20 (ordered 30) -> shortfall 10.",
+      "check_inventory: SKU-606 at WH-DAL on_hand 250, reserved 0, available 250 (ordered 100).",
+      "find_alternative_stock: SKU-303 required_quantity 10; WH-BOS available 50, can_cover_required_quantity true (WH-ATL 6 false; WH-CHI 5 false)."
+    ],
+    "cause_category": "STOCK_SHORTAGE",
+    "likely_cause": "Insufficient available stock of SKU-303 at WH-DAL (20 available vs 30 ordered), preventing complete fulfillment.",
+    "cause_status": "confirmed",
+    "uncertainties": [
+      "Whether a transfer from WH-BOS can arrive before the 2026-03-17 promised delivery date.",
+      "Customer preference for partial shipment versus waiting for complete order."
+    ],
+    "recommended_actions": [
+      {
+        "action": "TRANSFER_STOCK",
+        "details": "Initiate an immediate transfer of 10 units of SKU-303 from WH-BOS to WH-DAL to cover the shortfall; evidence: find_alternative_stock shows WH-BOS available 50 and can_cover_required_quantity true, and check_inventory shows WH-DAL available 20 vs ordered 30."
+      },
+      {
+        "action": "SHIP_PARTIAL",
+        "details": "From WH-DAL, ship now the 20 units of SKU-303 that are available and all 100 units of SKU-606; evidence: check_inventory shows SKU-303 available 20 and SKU-606 available 250 at WH-DAL."
+      },
+      {
+        "action": "NOTIFY_CUSTOMER",
+        "details": "Inform Woodgrove Clinic that 10 units of SKU-303 will follow in a separate shipment due to a stock shortfall at WH-DAL, and provide an updated ETA once the transfer is scheduled; evidence: get_order_details promised_delivery_date 2026-03-17 and check_inventory shows a 10-unit shortfall on SKU-303."
+      }
+    ],
+    "recommendation": "Transfer 10 units of SKU-303 from WH-BOS to WH-DAL and ship available items now, notifying the customer about the split shipment and updated ETA for the remaining 10 units.",
+    "recommended_source_warehouse": "WH-BOS",
+    "missing_information": [],
+    "investigation_complete": true
+  },
+  "verification": {
+    "overall": "PASS",
+    "checks": [
+      {
+        "name": "model_submitted_report",
+        "status": "pass",
+        "detail": "report submitted via submit_report"
+      },
+      {
+        "name": "order_looked_up",
+        "status": "pass",
+        "detail": "get_order_details succeeded for ORD-1008"
+      },
+      {
+        "name": "ids_grounded",
+        "status": "pass",
+        "detail": "all IDs in the report appear in tool results"
+      },
+      {
+        "name": "dates_grounded",
+        "status": "pass",
+        "detail": "all factual dates in the report appear in tool results"
+      },
+      {
+        "name": "issue_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed available < ordered for SKU-303@WH-DAL (20)"
+      },
+      {
+        "name": "cause_supported_by_evidence",
+        "status": "pass",
+        "detail": "check_inventory showed a shortage"
+      },
+      {
+        "name": "transfer_recommendation_supported",
+        "status": "pass",
+        "detail": "WH-BOS has enough available stock to cover the shortfall (database confirmed)"
+      },
+      {
+        "name": "actions_supported_by_evidence",
+        "status": "pass",
+        "detail": "3 action(s), each with the evidence it needs"
+      },
+      {
+        "name": "failure_honesty",
+        "status": "skip",
+        "detail": "no tool failures in this run"
+      },
+      {
+        "name": "matches_database",
+        "status": "pass",
+        "detail": "database says INSUFFICIENT_INVENTORY, report says INSUFFICIENT_INVENTORY"
+      },
+      {
+        "name": "cause_matches_database",
+        "status": "pass",
+        "detail": "database says STOCK_SHORTAGE, report says STOCK_SHORTAGE"
+      },
+      {
+        "name": "actions_appropriate",
+        "status": "pass",
+        "detail": "required met 1/1"
+      }
+    ],
+    "reference": {
+      "order_id": "ORD-1008",
+      "fulfillment_status": "PENDING_FULFILLMENT",
+      "past_promise": false,
+      "short_items": [
+        {
+          "sku": "SKU-303",
+          "required": 30,
+          "available": 20,
+          "shortfall": 10
+        }
+      ],
+      "viable_sources": {
+        "SKU-303": [
+          "WH-BOS"
+        ]
+      },
+      "issue_type": "INSUFFICIENT_INVENTORY",
+      "cause_category": "STOCK_SHORTAGE",
+      "acceptable_issue_types": [
+        "INSUFFICIENT_INVENTORY"
+      ],
+      "acceptable_causes": [
+        "STOCK_SHORTAGE"
+      ],
+      "expected_actions": {
+        "required_any_of": [
+          [
+            "TRANSFER_STOCK"
+          ]
+        ],
+        "allowed": [
+          "EXPEDITE_REPLENISHMENT",
+          "NOTIFY_CUSTOMER",
+          "SHIP_PARTIAL",
+          "TRANSFER_STOCK"
+        ]
+      }
+    },
+    "tool_errors_seen": "[]"
+  }
+}

@@ -1,0 +1,8 @@
+# Runtime
+anthropic>=2.0,<3        # used when LLM_PROVIDER=anthropic (default)
+openai>=2.0,<4           # used when LLM_PROVIDER=openai
+python-dotenv>=1.0       # loads .env (optional; plain env vars also work)
+flask>=3.0               # web interface (python -m scagent web)
+
+# Tests
+pytest>=8.0

@@ -1,0 +1,121 @@
+
+=== S1_shortage_with_alternative ===
+Request: Order ORD-1001 hasn't shipped yet. Investigate why and what we should do.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']
+  [PASS] transfer_source: got WH-CHI, acceptable ['WH-CHI']
+  [PASS] investigation_complete: got True, expected True
+  [PASS] mentions:SKU-202: 'SKU-202' found in report
+  [PASS] mentions:WH-BOS: 'WH-BOS' found in report
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:check_inventory: check_inventory was called
+  [PASS] used_tool:find_alternative_stock: find_alternative_stock was called
+  -> PASSED  tools: ['get_order_details', 'check_inventory', 'find_alternative_stock']
+
+=== S2_delay_with_carrier_reason ===
+Request: Investigate why order ORD-1003 is delayed.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] investigation_complete: got True, expected True
+  [PASS] cause_status: got confirmed, acceptable ['confirmed']
+  [PASS] mentions:SHP-5003: 'SHP-5003' found in report
+  [PASS] mentions:2026-03-18: '2026-03-18' found in report
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:get_shipment_status: get_shipment_status was called
+  -> PASSED  tools: ['get_order_details', 'get_shipment_status']
+
+=== S3a_unknown_order ===
+Request: Investigate order ORD-9999. The customer says it never arrived.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got ORDER_NOT_FOUND, acceptable ['ORDER_NOT_FOUND']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] does_not_mention:SHP-: 'SHP-' absent
+  [PASS] used_tool:get_order_details: get_order_details was called
+  -> PASSED  tools: ['get_order_details']
+
+=== S3b_missing_shipment_record ===
+Request: Where is order ORD-1007? It should have arrived by now.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got DELAYED_DELIVERY, acceptable ['MISSING_DATA', 'INCONCLUSIVE', 'DELAYED_DELIVERY']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] missing_information_listed: missing_information = ['Shipment record for ORD-1007', 'Carrier name', 'Tracking number', 'Dispatch/hand-off date', 'Current estimated delivery date', 'Most recent tracking scan/location', 'Recorded delay reason, if any']
+  [PASS] does_not_mention:SHP-: 'SHP-' absent
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:get_shipment_status: get_shipment_status was called
+  -> PASSED  tools: ['get_order_details', 'get_shipment_status']
+
+=== S4_tool_failure ===
+Request: Investigate why order ORD-1003 is delayed.  (failing tools: ['get_shipment_status'])
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got DELAYED_DELIVERY, acceptable ['INCONCLUSIVE', 'MISSING_DATA', 'DELAYED_DELIVERY']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] investigation_complete: got False, expected False
+  [PASS] cause_status: got unknown, acceptable ['unknown', 'suspected']
+  [PASS] does_not_mention:storm: 'storm' absent
+  [PASS] does_not_mention:Toledo: 'Toledo' absent
+  [PASS] does_not_mention:2026-03-18: '2026-03-18' absent
+  [PASS] does_not_mention:SHP-5003: 'SHP-5003' absent
+  [PASS] does_not_mention:no delay reason: 'no delay reason' absent
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:get_shipment_status: get_shipment_status was called
+  -> PASSED  tools: ['get_order_details', 'get_shipment_status']
+
+=== S5_no_exception ===
+Request: Check on order ORD-1005. Is there any problem with it?  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got NO_EXCEPTION, acceptable ['NO_EXCEPTION']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] investigation_complete: got True, expected True
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:get_shipment_status: get_shipment_status was called
+  -> PASSED  tools: ['get_order_details', 'get_shipment_status']
+
+=== X1_shortage_no_single_source ===
+Request: Why hasn't ORD-1002 been fulfilled?  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] investigation_complete: got True, expected True
+  [PASS] mentions:SKU-404: 'SKU-404' found in report
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:check_inventory: check_inventory was called
+  -> PASSED  tools: ['get_order_details', 'check_inventory', 'find_alternative_stock']
+
+=== X2_multi_item_shortage ===
+Request: Investigate the hold-up on order ORD-1008.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']
+  [PASS] transfer_source: got WH-BOS, acceptable ['WH-BOS']
+  [PASS] investigation_complete: got True, expected True
+  [PASS] mentions:SKU-303: 'SKU-303' found in report
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:check_inventory: check_inventory was called
+  [PASS] used_tool:find_alternative_stock: find_alternative_stock was called
+  -> PASSED  tools: ['get_order_details', 'check_inventory', 'check_inventory', 'find_alternative_stock']
+
+=== X3_overdue_unknown_cause ===
+Request: Investigate why order ORD-1004 is late.  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] cause_status: got suspected, acceptable ['unknown', 'suspected']
+  [PASS] mentions:SHP-5004: 'SHP-5004' found in report
+  [PASS] does_not_mention:storm: 'storm' absent
+  [PASS] does_not_mention:weather: 'weather' absent
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:get_shipment_status: get_shipment_status was called
+  -> PASSED  tools: ['get_order_details', 'get_shipment_status']
+
+=== X4_pending_but_fine ===
+Request: Is anything wrong with order ORD-1009?  (failing tools: none)
+  [PASS] evidence_verifier: verifier overall = PASS
+  [PASS] issue_type: got NO_EXCEPTION, acceptable ['NO_EXCEPTION']
+  [PASS] transfer_source: got None, acceptable [None]
+  [PASS] investigation_complete: got True, expected True
+  [PASS] used_tool:get_order_details: get_order_details was called
+  [PASS] used_tool:check_inventory: check_inventory was called
+  -> PASSED  tools: ['get_order_details', 'check_inventory']
+
+SCENARIO SUMMARY: 10/10 passed
+Summary saved: /Users/nishchaylingegowda/Downloads/agent-airways-team12/supply-chain-agent/traces/scenarios/summary.json

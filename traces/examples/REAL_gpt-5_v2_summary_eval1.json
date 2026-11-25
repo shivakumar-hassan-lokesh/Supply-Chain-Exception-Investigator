@@ -1,0 +1,2253 @@
+{
+  "provider": "openai",
+  "model": "gpt-5",
+  "created": "2026-11-17T16:19:27",
+  "repeat": 2,
+  "passed": 19,
+  "total": 26,
+  "metrics": {
+    "runs": 26,
+    "scenario_pass_rate": 0.731,
+    "issue_accuracy": 1.0,
+    "cause_accuracy": 1.0,
+    "action_recall": 1.0,
+    "action_precision": 0.917,
+    "evidence_grounding_rate": 0.769
+  },
+  "pass_count_by_scenario": {
+    "S1_shortage_with_alternative": "2/2",
+    "S2_delay_with_carrier_reason": "0/2",
+    "S3a_unknown_order": "2/2",
+    "S3b_missing_shipment_record": "2/2",
+    "S4_tool_failure": "2/2",
+    "S5_no_exception": "2/2",
+    "X1_shortage_no_single_source": "2/2",
+    "X2_multi_item_shortage": "2/2",
+    "X3_overdue_unknown_cause": "0/2",
+    "X4_pending_but_fine": "2/2",
+    "D1_carrier_disruption_alert": "1/2",
+    "D2_late_dispatch": "0/2",
+    "D3_shortage_past_promise": "2/2"
+  },
+  "results": [
+    {
+      "scenario": "S1_shortage_with_alternative",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-CHI, acceptable ['WH-CHI']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-202",
+          "status": "pass",
+          "detail": "'SKU-202' found in report"
+        },
+        {
+          "name": "mentions:WH-BOS",
+          "status": "pass",
+          "detail": "'WH-BOS' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-CHI",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S2_delay_with_carrier_reason",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got CARRIER_REPORTED_DELAY, acceptable ['CARRIER_REPORTED_DELAY', 'CARRIER_SERVICE_DISRUPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NOTIFY_CUSTOMER', 'NO_ACTION_MONITOR']; required one of each [['NOTIFY_CUSTOMER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got confirmed, acceptable ['confirmed']"
+        },
+        {
+          "name": "mentions:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' found in report"
+        },
+        {
+          "name": "mentions:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.5,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "CARRIER_REPORTED_DELAY",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NOTIFY_CUSTOMER",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S3a_unknown_order",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got ORDER_NOT_FOUND, acceptable ['ORDER_NOT_FOUND']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE', 'UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['VERIFY_ORDER_ID']; required one of each [['VERIFY_ORDER_ID']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "ORDER_NOT_FOUND",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "VERIFY_ORDER_ID"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S3b_missing_shipment_record",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['MISSING_DATA', 'DELAYED_DELIVERY', 'INCONCLUSIVE']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got MISSING_SHIPMENT_RECORD, acceptable ['MISSING_SHIPMENT_RECORD']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['ESCALATE_TO_WAREHOUSE', 'NOTIFY_CUSTOMER', 'CONTACT_CARRIER']; required one of each [['ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "missing_information_listed",
+          "status": "pass",
+          "detail": "missing_information = ['Shipment record for ORD-1007 (carrier, tracking number, dispatch date)', 'Current in-transit location and carrier-provided ETA']"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "MISSING_SHIPMENT_RECORD",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "ESCALATE_TO_WAREHOUSE",
+          "NOTIFY_CUSTOMER",
+          "CONTACT_CARRIER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S4_tool_failure",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['INCONCLUSIVE', 'MISSING_DATA', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got UNKNOWN, acceptable ['UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['ESCALATE_TO_WAREHOUSE', 'CONTACT_CARRIER', 'NOTIFY_CUSTOMER', 'RETRY_LATER']; required one of each [['RETRY_LATER', 'CONTACT_CARRIER', 'ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got False, expected False"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got unknown, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:Toledo",
+          "status": "pass",
+          "detail": "'Toledo' absent"
+        },
+        {
+          "name": "does_not_mention:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' absent"
+        },
+        {
+          "name": "does_not_mention:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' absent"
+        },
+        {
+          "name": "does_not_mention:no delay reason",
+          "status": "pass",
+          "detail": "'no delay reason' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "UNKNOWN",
+        "cause_status": "unknown",
+        "recommended_source_warehouse": null,
+        "investigation_complete": false,
+        "actions": [
+          "ESCALATE_TO_WAREHOUSE",
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER",
+          "RETRY_LATER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S5_no_exception",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NO_ACTION_MONITOR']; required one of each [['NO_ACTION_MONITOR']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "NO_EXCEPTION",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "X1_shortage_no_single_source",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['EXPEDITE_REPLENISHMENT', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['EXPEDITE_REPLENISHMENT']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-404",
+          "status": "pass",
+          "detail": "'SKU-404' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "EXPEDITE_REPLENISHMENT",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "X2_multi_item_shortage",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-BOS, acceptable ['WH-BOS']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-303",
+          "status": "pass",
+          "detail": "'SKU-303' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-BOS",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "X3_overdue_unknown_cause",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got TRACKING_STALLED, acceptable ['TRACKING_STALLED', 'UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['CONTACT_CARRIER', 'NOTIFY_CUSTOMER']; required one of each [['CONTACT_CARRIER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "cause_status",
+          "status": "fail",
+          "detail": "got confirmed, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "mentions:SHP-5004",
+          "status": "pass",
+          "detail": "'SHP-5004' found in report"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:weather",
+          "status": "pass",
+          "detail": "'weather' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status",
+        "get_carrier_alerts"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "TRACKING_STALLED",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "X4_pending_but_fine",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NO_ACTION_MONITOR']; required one of each [['NO_ACTION_MONITOR']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "NO_EXCEPTION",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "D1_carrier_disruption_alert",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got CARRIER_SERVICE_DISRUPTION, acceptable ['CARRIER_SERVICE_DISRUPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['CONTACT_CARRIER', 'NOTIFY_CUSTOMER', 'NO_ACTION_MONITOR']; required one of each [['CONTACT_CARRIER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got confirmed, acceptable ['suspected', 'confirmed']"
+        },
+        {
+          "name": "mentions:ALR-701",
+          "status": "pass",
+          "detail": "'ALR-701' found in report"
+        },
+        {
+          "name": "does_not_mention:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        },
+        {
+          "name": "used_tool:get_carrier_alerts",
+          "status": "pass",
+          "detail": "get_carrier_alerts was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status",
+        "get_carrier_alerts"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.6666666666666666,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "CARRIER_SERVICE_DISRUPTION",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "D2_late_dispatch",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got LATE_DISPATCH, acceptable ['LATE_DISPATCH']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NOTIFY_CUSTOMER', 'ESCALATE_TO_WAREHOUSE', 'NO_ACTION_MONITOR']; required one of each [['ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:2026-03-09",
+          "status": "pass",
+          "detail": "'2026-03-09' found in report"
+        },
+        {
+          "name": "mentions:2026-03-13",
+          "status": "pass",
+          "detail": "'2026-03-13' found in report"
+        },
+        {
+          "name": "does_not_mention:ALR-702",
+          "status": "pass",
+          "detail": "'ALR-702' absent"
+        },
+        {
+          "name": "does_not_mention:Hartford",
+          "status": "pass",
+          "detail": "'Hartford' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.6666666666666666,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "LATE_DISPATCH",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NOTIFY_CUSTOMER",
+          "ESCALATE_TO_WAREHOUSE",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "D3_shortage_past_promise",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-BOS, acceptable ['WH-BOS', 'WH-DAL']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK'], ['NOTIFY_CUSTOMER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-101",
+          "status": "pass",
+          "detail": "'SKU-101' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-BOS",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 1
+    },
+    {
+      "scenario": "S1_shortage_with_alternative",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-CHI, acceptable ['WH-CHI']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-202",
+          "status": "pass",
+          "detail": "'SKU-202' found in report"
+        },
+        {
+          "name": "mentions:WH-BOS",
+          "status": "pass",
+          "detail": "'WH-BOS' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-CHI",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "S2_delay_with_carrier_reason",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got CARRIER_REPORTED_DELAY, acceptable ['CARRIER_REPORTED_DELAY', 'CARRIER_SERVICE_DISRUPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NOTIFY_CUSTOMER', 'CONTACT_CARRIER', 'NO_ACTION_MONITOR']; required one of each [['NOTIFY_CUSTOMER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got confirmed, acceptable ['confirmed']"
+        },
+        {
+          "name": "mentions:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' found in report"
+        },
+        {
+          "name": "mentions:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.6666666666666666,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "CARRIER_REPORTED_DELAY",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NOTIFY_CUSTOMER",
+          "CONTACT_CARRIER",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "S3a_unknown_order",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got ORDER_NOT_FOUND, acceptable ['ORDER_NOT_FOUND']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE', 'UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['VERIFY_ORDER_ID']; required one of each [['VERIFY_ORDER_ID']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "ORDER_NOT_FOUND",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": false,
+        "actions": [
+          "VERIFY_ORDER_ID"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "S3b_missing_shipment_record",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['MISSING_DATA', 'DELAYED_DELIVERY', 'INCONCLUSIVE']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got MISSING_SHIPMENT_RECORD, acceptable ['MISSING_SHIPMENT_RECORD']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['ESCALATE_TO_WAREHOUSE', 'NOTIFY_CUSTOMER', 'CONTACT_CARRIER']; required one of each [['ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "missing_information_listed",
+          "status": "pass",
+          "detail": "missing_information = ['Carrier name and tracking number', 'Actual dispatch date', 'Current shipment location', 'Updated estimated delivery date']"
+        },
+        {
+          "name": "does_not_mention:SHP-",
+          "status": "pass",
+          "detail": "'SHP-' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "MISSING_SHIPMENT_RECORD",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "ESCALATE_TO_WAREHOUSE",
+          "NOTIFY_CUSTOMER",
+          "CONTACT_CARRIER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "S4_tool_failure",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['INCONCLUSIVE', 'MISSING_DATA', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got UNKNOWN, acceptable ['UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['ESCALATE_TO_WAREHOUSE', 'CONTACT_CARRIER', 'NOTIFY_CUSTOMER', 'RETRY_LATER']; required one of each [['RETRY_LATER', 'CONTACT_CARRIER', 'ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got False, expected False"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got unknown, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:Toledo",
+          "status": "pass",
+          "detail": "'Toledo' absent"
+        },
+        {
+          "name": "does_not_mention:2026-03-18",
+          "status": "pass",
+          "detail": "'2026-03-18' absent"
+        },
+        {
+          "name": "does_not_mention:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' absent"
+        },
+        {
+          "name": "does_not_mention:no delay reason",
+          "status": "pass",
+          "detail": "'no delay reason' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "UNKNOWN",
+        "cause_status": "unknown",
+        "recommended_source_warehouse": null,
+        "investigation_complete": false,
+        "actions": [
+          "ESCALATE_TO_WAREHOUSE",
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER",
+          "RETRY_LATER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "S5_no_exception",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NO_ACTION_MONITOR']; required one of each [['NO_ACTION_MONITOR']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "NO_EXCEPTION",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "X1_shortage_no_single_source",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['EXPEDITE_REPLENISHMENT', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['EXPEDITE_REPLENISHMENT']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-404",
+          "status": "pass",
+          "detail": "'SKU-404' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "EXPEDITE_REPLENISHMENT",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "X2_multi_item_shortage",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-BOS, acceptable ['WH-BOS']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-303",
+          "status": "pass",
+          "detail": "'SKU-303' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-BOS",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "X3_overdue_unknown_cause",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got TRACKING_STALLED, acceptable ['TRACKING_STALLED', 'UNKNOWN']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['CONTACT_CARRIER', 'NOTIFY_CUSTOMER', 'NO_ACTION_MONITOR']; required one of each [['CONTACT_CARRIER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "cause_status",
+          "status": "fail",
+          "detail": "got confirmed, acceptable ['unknown', 'suspected']"
+        },
+        {
+          "name": "mentions:SHP-5004",
+          "status": "pass",
+          "detail": "'SHP-5004' found in report"
+        },
+        {
+          "name": "does_not_mention:storm",
+          "status": "pass",
+          "detail": "'storm' absent"
+        },
+        {
+          "name": "does_not_mention:weather",
+          "status": "pass",
+          "detail": "'weather' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status",
+        "get_carrier_alerts"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.6666666666666666,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "TRACKING_STALLED",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "X4_pending_but_fine",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got NO_EXCEPTION, acceptable ['NO_EXCEPTION']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got NOT_APPLICABLE, acceptable ['NOT_APPLICABLE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NO_ACTION_MONITOR']; required one of each [['NO_ACTION_MONITOR']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "NO_EXCEPTION",
+        "cause_category": "NOT_APPLICABLE",
+        "cause_status": "not_applicable",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "D1_carrier_disruption_alert",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got CARRIER_SERVICE_DISRUPTION, acceptable ['CARRIER_SERVICE_DISRUPTION']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['CONTACT_CARRIER', 'NOTIFY_CUSTOMER']; required one of each [['CONTACT_CARRIER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "cause_status",
+          "status": "pass",
+          "detail": "got confirmed, acceptable ['suspected', 'confirmed']"
+        },
+        {
+          "name": "mentions:ALR-701",
+          "status": "pass",
+          "detail": "'ALR-701' found in report"
+        },
+        {
+          "name": "does_not_mention:SHP-5003",
+          "status": "pass",
+          "detail": "'SHP-5003' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        },
+        {
+          "name": "used_tool:get_carrier_alerts",
+          "status": "pass",
+          "detail": "get_carrier_alerts was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status",
+        "get_carrier_alerts"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "CARRIER_SERVICE_DISRUPTION",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "CONTACT_CARRIER",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "D2_late_dispatch",
+      "passed": false,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "fail",
+          "detail": "verifier overall = FAIL"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got DELAYED_DELIVERY, acceptable ['DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got LATE_DISPATCH, acceptable ['LATE_DISPATCH']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got None, acceptable [None]"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['NOTIFY_CUSTOMER', 'ESCALATE_TO_WAREHOUSE', 'NO_ACTION_MONITOR']; required one of each [['ESCALATE_TO_WAREHOUSE']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "fail",
+          "detail": "not expected here: ['NO_ACTION_MONITOR']"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:2026-03-09",
+          "status": "pass",
+          "detail": "'2026-03-09' found in report"
+        },
+        {
+          "name": "mentions:2026-03-13",
+          "status": "pass",
+          "detail": "'2026-03-13' found in report"
+        },
+        {
+          "name": "does_not_mention:ALR-702",
+          "status": "pass",
+          "detail": "'ALR-702' absent"
+        },
+        {
+          "name": "does_not_mention:Hartford",
+          "status": "pass",
+          "detail": "'Hartford' absent"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:get_shipment_status",
+          "status": "pass",
+          "detail": "get_shipment_status was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "get_shipment_status"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 0.6666666666666666,
+        "grounded": false
+      },
+      "report": {
+        "issue_type": "DELAYED_DELIVERY",
+        "cause_category": "LATE_DISPATCH",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": null,
+        "investigation_complete": true,
+        "actions": [
+          "NOTIFY_CUSTOMER",
+          "ESCALATE_TO_WAREHOUSE",
+          "NO_ACTION_MONITOR"
+        ]
+      },
+      "run": 2
+    },
+    {
+      "scenario": "D3_shortage_past_promise",
+      "passed": true,
+      "checks": [
+        {
+          "name": "evidence_verifier",
+          "status": "pass",
+          "detail": "verifier overall = PASS"
+        },
+        {
+          "name": "issue_type",
+          "status": "pass",
+          "detail": "got INSUFFICIENT_INVENTORY, acceptable ['INSUFFICIENT_INVENTORY', 'DELAYED_DELIVERY']"
+        },
+        {
+          "name": "cause_category",
+          "status": "pass",
+          "detail": "got STOCK_SHORTAGE, acceptable ['STOCK_SHORTAGE']"
+        },
+        {
+          "name": "transfer_source",
+          "status": "pass",
+          "detail": "got WH-BOS, acceptable ['WH-BOS', 'WH-DAL']"
+        },
+        {
+          "name": "required_actions",
+          "status": "pass",
+          "detail": "proposed ['TRANSFER_STOCK', 'SHIP_PARTIAL', 'NOTIFY_CUSTOMER']; required one of each [['TRANSFER_STOCK'], ['NOTIFY_CUSTOMER']]"
+        },
+        {
+          "name": "no_inappropriate_actions",
+          "status": "pass",
+          "detail": "all proposed actions are appropriate"
+        },
+        {
+          "name": "investigation_complete",
+          "status": "pass",
+          "detail": "got True, expected True"
+        },
+        {
+          "name": "mentions:SKU-101",
+          "status": "pass",
+          "detail": "'SKU-101' found in report"
+        },
+        {
+          "name": "used_tool:get_order_details",
+          "status": "pass",
+          "detail": "get_order_details was called"
+        },
+        {
+          "name": "used_tool:check_inventory",
+          "status": "pass",
+          "detail": "check_inventory was called"
+        },
+        {
+          "name": "used_tool:find_alternative_stock",
+          "status": "pass",
+          "detail": "find_alternative_stock was called"
+        }
+      ],
+      "tools_called_in_order": [
+        "get_order_details",
+        "check_inventory",
+        "find_alternative_stock"
+      ],
+      "scores": {
+        "issue_correct": true,
+        "cause_correct": true,
+        "action_recall": 1.0,
+        "action_precision": 1.0,
+        "grounded": true
+      },
+      "report": {
+        "issue_type": "INSUFFICIENT_INVENTORY",
+        "cause_category": "STOCK_SHORTAGE",
+        "cause_status": "confirmed",
+        "recommended_source_warehouse": "WH-BOS",
+        "investigation_complete": true,
+        "actions": [
+          "TRANSFER_STOCK",
+          "SHIP_PARTIAL",
+          "NOTIFY_CUSTOMER"
+        ]
+      },
+      "run": 2
+    }
+  ]
+}

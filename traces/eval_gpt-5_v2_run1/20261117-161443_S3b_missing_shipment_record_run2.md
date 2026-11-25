@@ -1,0 +1,118 @@
+# Execution trace
+
+- **Request:** Where is order ORD-1007? It should have arrived by now.
+- **provider:** openai
+- **model:** gpt-5
+- **investigation_date:** 2026-03-16
+- **max_tool_calls:** 8
+- **simulated_failing_tools:** none
+- **scenario:** S3b_missing_shipment_record
+- **scenario_passed:** True
+- **run:** 2
+
+## Steps
+
+### Step 1: model_turn
+```
+[model says] I'm checking the order details to confirm its fulfillment status and promised delivery date.
+[model requests] get_order_details({"order_id": "ORD-1007"})
+```
+### Step 2: tool_execution
+```
+[python] scagent.tools.get_order_details executed=True -> ok (1.23 ms)
+[result] {
+  "ok": true,
+  "data": {
+    "order_id": "ORD-1007",
+    "customer_name": "Litware Inc",
+    "fulfillment_warehouse_id": "WH-ATL",
+    "fulfillment_warehouse_name": "Atlanta Distribution Center",
+    "order_date": "2026-03-08",
+    "promised_delivery_date": "2026-03-13",
+    "ship_by_date": "2026-03-09",
+    "fulfillment_status": "SHIPPED",
+    "items": [
+      {
+        "sku": "SKU-101",
+        "product_name": "Pallet Jack Wheel Kit",
+        "quantity": 12
+      }
+    ],
+    "investigation_date": "2026-03-16",
+    "days_until_promised_date": -3,
+    "is_past_promised_date": true,
+    "is_past_ship_by_date": false
+  }
+}
+```
+### Step 3: model_turn
+```
+[model says] I'm pulling the shipment tracking to see its current status, ETA, and any recorded delay reasons.
+[model requests] get_shipment_status({"order_id": "ORD-1007"})
+```
+### Step 4: tool_execution
+```
+[python] scagent.tools.get_shipment_status executed=True -> ERROR NOT_FOUND (1.5 ms)
+[result] {
+  "ok": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record."
+  }
+}
+```
+### Step 5: model_turn
+```
+[model says] I'm submitting the investigation report with the findings, evidence, and recommended next steps.
+[model requests] submit_report({"order_id": "ORD-1007", "issue_type": "DELAYED_DELIVERY", "summary": "The order is past its promised delivery date but has no shipment record, so its whereabouts and ETA cannot be verified. This indicates a missing shipment record despite the order being marked SHIPPED.", "evidence": ["get_order_details: ORD-1007 fulfillment_status SHIPPED from WH-ATL, promised_delivery_date 2026-03-13 (is_past_promised_date=true, days_until_promised_date=-3), ship_by_date 2026-03-09, 1 line item SKU-101 qty 12", "get_shipment_status: NOT_FOUND \u2014 \"Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record.\""], "cause_category": "MISSING_SHIPMENT_RECORD", "likely_cause": "The order was marked SHIPPED but no carrier/tracking record exists, preventing tracking and indicating the handoff or label creation was not recorded.", "cause_status": "confirmed", "uncertainties": ["Whether the shipment actually left WH-ATL and on what date", "Which carrier and tracking number apply", "Current location and a confirmed ETA"], "recommended_actions": [{"action": "ESCALATE_TO_WAREHOUSE", "details": "Ask WH-ATL to locate ORD-1007, confirm actual dispatch date and carrier, and create/correct the shipment record with tracking immediately; if it did not ship, dispatch it now with an expedited service. Evidence: get_order_details shows SHIPPED and promised 2026-03-13 already passed; get_shipment_status returned NOT_FOUND for any shipment record."}, {"action": "NOTIFY_CUSTOMER", "details": "Inform Litware Inc that ORD-1007 is delayed and currently lacks a tracking record; provide an updated ETA once WH-ATL supplies the carrier/tracking or confirms re-dispatch. Evidence: promised_delivery_date 2026-03-13 (past), no shipment record found."}, {"action": "CONTACT_CARRIER", "details": "Once tracking is obtained from WH-ATL, contact the carrier for a trace and confirmed ETA if the package is not moving. Evidence needed: carrier and tracking to be provided by warehouse; current absence of tracking prevents direct contact now."}], "recommendation": "Escalate to WH-ATL to supply or correct tracking (or dispatch a replacement if it never shipped), notify the customer of the delay, and then contact the carrier for a trace once tracking is available.", "recommended_source_warehouse": null, "missing_information": ["Carrier name and tracking number", "Actual dispatch date", "Current shipment location", "Updated estimated delivery date"], "investigation_complete": true})
+```
+### Step 6: final_report
+```
+[model submitted report] issue_type=DELAYED_DELIVERY
+```
+
+## Final report
+```
+INVESTIGATION REPORT
+Order:            ORD-1007
+Issue:            DELAYED_DELIVERY
+Complete:         True
+Summary:          The order is past its promised delivery date but has no shipment record, so its whereabouts and ETA cannot be verified. This indicates a missing shipment record despite the order being marked SHIPPED.
+Evidence:
+  - get_order_details: ORD-1007 fulfillment_status SHIPPED from WH-ATL, promised_delivery_date 2026-03-13 (is_past_promised_date=true, days_until_promised_date=-3), ship_by_date 2026-03-09, 1 line item SKU-101 qty 12
+  - get_shipment_status: NOT_FOUND — "Order 'ORD-1007' exists (fulfillment_status=SHIPPED) but has no shipment record."
+Cause category:   MISSING_SHIPMENT_RECORD  (confirmed)
+Likely cause:     The order was marked SHIPPED but no carrier/tracking record exists, preventing tracking and indicating the handoff or label creation was not recorded.
+Uncertainties:
+  - Whether the shipment actually left WH-ATL and on what date
+  - Which carrier and tracking number apply
+  - Current location and a confirmed ETA
+Recommended actions:
+  - ESCALATE_TO_WAREHOUSE: Ask WH-ATL to locate ORD-1007, confirm actual dispatch date and carrier, and create/correct the shipment record with tracking immediately; if it did not ship, dispatch it now with an expedited service. Evidence: get_order_details shows SHIPPED and promised 2026-03-13 already passed; get_shipment_status returned NOT_FOUND for any shipment record.
+  - NOTIFY_CUSTOMER: Inform Litware Inc that ORD-1007 is delayed and currently lacks a tracking record; provide an updated ETA once WH-ATL supplies the carrier/tracking or confirms re-dispatch. Evidence: promised_delivery_date 2026-03-13 (past), no shipment record found.
+  - CONTACT_CARRIER: Once tracking is obtained from WH-ATL, contact the carrier for a trace and confirmed ETA if the package is not moving. Evidence needed: carrier and tracking to be provided by warehouse; current absence of tracking prevents direct contact now.
+Plan:             Escalate to WH-ATL to supply or correct tracking (or dispatch a replacement if it never shipped), notify the customer of the delay, and then contact the carrier for a trace once tracking is available.
+Transfer source:  -
+Missing information:
+  - Carrier name and tracking number
+  - Actual dispatch date
+  - Current shipment location
+  - Updated estimated delivery date
+```
+
+## Evidence verification (Python, not the model)
+
+- **PASS** `model_submitted_report`: report submitted via submit_report
+- **PASS** `order_looked_up`: get_order_details succeeded for ORD-1007
+- **PASS** `ids_grounded`: all IDs in the report appear in tool results
+- **PASS** `dates_grounded`: all factual dates in the report appear in tool results
+- **WARN** `issue_supported_by_evidence`: only the order's promised date shows lateness; no shipment data confirms it
+- **PASS** `cause_supported_by_evidence`: get_shipment_status returned NOT_FOUND
+- **SKIP** `transfer_recommendation_supported`: no transfer recommended
+- **PASS** `actions_supported_by_evidence`: 3 action(s), each with the evidence it needs
+- **SKIP** `failure_honesty`: no tool failures in this run
+- **PASS** `matches_database`: database says MISSING_DATA/DELAYED_DELIVERY, report says DELAYED_DELIVERY
+- **PASS** `cause_matches_database`: database says MISSING_SHIPMENT_RECORD, report says MISSING_SHIPMENT_RECORD
+- **PASS** `actions_appropriate`: required met 1/1
+
+**Overall:** PASS
